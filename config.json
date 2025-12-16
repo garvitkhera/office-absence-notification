@@ -1,6 +1,6 @@
 {
   "email": {
-    "smtp_host": "smtp.gmail.com",
+    "smtp_host": "smtp.office365.com",
     "smtp_port": 587,
     "smtp_user": "",
     "smtp_password": "",
@@ -22,6 +22,6 @@
     {"name": "Jacob Burrows", "email": "jburrows@parkagility.com"},
     {"name": "Jorge Molina", "email": "jmolina@parkagility.com"}
   ],
-    "company_name": "Park Agility",
-    "timezone": "UTC+11"
+  "company_name": "Park Agility",
+  "timezone": "UTC+11"
 }

@@ -124,11 +124,12 @@
         }
 
         .date-picker-wrapper {
-            position: relative;
+            display: flex;
+            gap: 8px;
         }
 
         .date-input {
-            width: 100%;
+            flex: 1;
             padding: 14px 16px;
             border: 2px solid #e5e7eb;
             border-radius: 10px;
@@ -184,6 +185,96 @@
             box-shadow: none;
         }
 
+        /* Update Absence Section */
+        .update-absence-section {
+            margin-top: 24px;
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 12px;
+            border: 2px solid #e2e8f0;
+            display: none;
+        }
+
+        .update-absence-section.show {
+            display: block;
+        }
+
+        .update-absence-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .update-absence-title {
+            font-weight: 600;
+            color: var(--pa-dark-blue);
+            font-size: 15px;
+        }
+
+        .absence-count {
+            background: var(--pa-dark-blue);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .absence-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .absence-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .absence-date {
+            font-size: 14px;
+            color: #374151;
+        }
+
+        .absence-date-day {
+            font-weight: 600;
+            color: var(--pa-dark-blue);
+        }
+
+        .remove-absence-btn {
+            width: 28px;
+            height: 28px;
+            border: none;
+            background: #fee2e2;
+            color: #dc2626;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .remove-absence-btn:hover {
+            background: #dc2626;
+            color: white;
+        }
+
+        .no-absences {
+            text-align: center;
+            color: #6b7280;
+            font-size: 14px;
+            padding: 20px;
+        }
+
+        /* Status Section */
         .status-section {
             margin-top: 24px;
             padding-top: 24px;
@@ -294,40 +385,10 @@
             background: #dc2626;
         }
 
-        .my-absences {
-            margin-top: 16px;
-        }
-
-        .absence-chip {
-            display: inline-flex;
-            align-items: center;
-            background: #e8eaf6;
-            color: var(--pa-dark-blue);
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 13px;
-            margin: 4px;
-        }
-
-        .absence-chip button {
-            background: none;
-            border: none;
-            color: var(--pa-dark-blue);
-            margin-left: 8px;
-            cursor: pointer;
-            font-size: 16px;
-            line-height: 1;
-        }
-
-        .absence-chip button:hover {
-            color: #0f1a3d;
-        }
-
         .flatpickr-calendar {
             border-radius: 12px !important;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15) !important;
         }
-
     </style>
 </head>
 <body>
@@ -349,14 +410,25 @@
                     </select>
                 </div>
 
+                <!-- Update Absence Section -->
+                <div class="update-absence-section" id="updateAbsenceSection">
+                    <div class="update-absence-header">
+                        <span class="update-absence-title">📅 Your Scheduled Absences</span>
+                        <span class="absence-count" id="absenceCount">0</span>
+                    </div>
+                    <div class="absence-list" id="absenceList">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
                 <div class="form-group">
                     <label>When are you not coming?</label>
                     <div class="quick-buttons">
                         <button class="quick-btn" data-quick="today">📅 Today</button>
                         <button class="quick-btn" data-quick="tomorrow">📆 Tomorrow</button>
                     </div>
-                    <div style="display: flex; gap: 8px;">
-                        <input type="text" id="datePicker" class="date-input" placeholder="Or select dates..." style="flex: 1;">
+                    <div class="date-picker-wrapper">
+                        <input type="text" id="datePicker" class="date-input" placeholder="Or select dates...">
                         <button type="button" id="clearDates" class="clear-btn" title="Clear dates">✕</button>
                     </div>
                 </div>
@@ -364,11 +436,6 @@
                 <button class="submit-btn" id="submitBtn" disabled>
                     🚫 Not Going to Office
                 </button>
-
-                <div class="my-absences" id="myAbsences" style="display: none;">
-                    <label>Your upcoming absences:</label>
-                    <div id="absenceList"></div>
-                </div>
 
                 <div class="status-section">
                     <div class="status-title">Today's Key Bearer Status</div>
@@ -391,8 +458,9 @@
         const statusGrid = document.getElementById('statusGrid');
         const alertBanner = document.getElementById('alertBanner');
         const quickBtns = document.querySelectorAll('.quick-btn');
-        const myAbsencesDiv = document.getElementById('myAbsences');
+        const updateAbsenceSection = document.getElementById('updateAbsenceSection');
         const absenceList = document.getElementById('absenceList');
+        const absenceCount = document.getElementById('absenceCount');
 
         let selectedDates = [];
         let fp;
@@ -420,6 +488,14 @@
         // Format date to YYYY-MM-DD
         function formatDate(date) {
             return date.toISOString().split('T')[0];
+        }
+
+        // Format date for display
+        function formatDateDisplay(dateStr) {
+            const date = new Date(dateStr + 'T00:00:00');
+            const day = date.toLocaleDateString('en-US', { weekday: 'short' });
+            const full = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            return { day, full };
         }
 
         // Get today and tomorrow dates
@@ -465,39 +541,58 @@
         async function loadMyAbsences() {
             const bearer = keyBearerSelect.value;
             if (!bearer) {
-                myAbsencesDiv.style.display = 'none';
+                updateAbsenceSection.classList.remove('show');
                 return;
             }
 
-            const res = await fetch(`/api/my-absences/${encodeURIComponent(bearer)}`);
-            const absences = await res.json();
+            try {
+                const res = await fetch(`/api/my-absences/${encodeURIComponent(bearer)}`);
+                const absences = await res.json();
 
-            if (absences.length > 0) {
-                myAbsencesDiv.style.display = 'block';
-                absenceList.innerHTML = absences.map(d => `
-                    <span class="absence-chip">
-                        ${new Date(d + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-                        <button onclick="cancelAbsence('${d}')">&times;</button>
-                    </span>
-                `).join('');
-            } else {
-                myAbsencesDiv.style.display = 'none';
+                if (absences.length > 0) {
+                    updateAbsenceSection.classList.add('show');
+                    absenceCount.textContent = absences.length;
+                    
+                    absenceList.innerHTML = absences.map(d => {
+                        const { day, full } = formatDateDisplay(d);
+                        return `
+                            <div class="absence-item">
+                                <span class="absence-date">
+                                    <span class="absence-date-day">${day}</span> · ${full}
+                                </span>
+                                <button class="remove-absence-btn" onclick="cancelAbsence('${d}')" title="Remove this date">✕</button>
+                            </div>
+                        `;
+                    }).join('');
+                } else {
+                    updateAbsenceSection.classList.remove('show');
+                }
+            } catch (err) {
+                console.error('Error loading absences:', err);
+                updateAbsenceSection.classList.remove('show');
             }
         }
 
         // Cancel an absence
         async function cancelAbsence(date) {
             const bearer = keyBearerSelect.value;
-            const res = await fetch('/api/cancel-absence', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ key_bearer: bearer, dates: [date] })
-            });
+            
+            try {
+                const res = await fetch('/api/cancel-absence', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ key_bearer: bearer, dates: [date] })
+                });
 
-            if (res.ok) {
-                showToast('Absence cancelled', 'success');
-                loadMyAbsences();
-                loadStatus();
+                if (res.ok) {
+                    showToast('Absence removed', 'success');
+                    loadMyAbsences();
+                    loadStatus();
+                } else {
+                    showToast('Failed to remove absence', 'error');
+                }
+            } catch (err) {
+                showToast('Error removing absence', 'error');
             }
         }
 
@@ -547,32 +642,37 @@
         // Load status for today
         async function loadStatus() {
             const today = getToday();
-            const res = await fetch(`/api/status/${today}`);
-            const data = await res.json();
+            
+            try {
+                const res = await fetch(`/api/status/${today}`);
+                const data = await res.json();
 
-            statusGrid.innerHTML = data.key_bearers.map(kb => `
-                <div class="status-item">
-                    <div class="status-dot ${kb.absent ? 'absent' : 'available'}"></div>
-                    <span class="status-name">${kb.name}</span>
-                    <span class="status-badge ${kb.absent ? 'absent' : 'available'}">
-                        ${kb.absent ? 'Not Coming' : 'Available'}
-                    </span>
-                </div>
-            `).join('');
+                statusGrid.innerHTML = data.key_bearers.map(kb => `
+                    <div class="status-item">
+                        <div class="status-dot ${kb.absent ? 'absent' : 'available'}"></div>
+                        <span class="status-name">${kb.name}</span>
+                        <span class="status-badge ${kb.absent ? 'absent' : 'available'}">
+                            ${kb.absent ? 'Not Coming' : 'Available'}
+                        </span>
+                    </div>
+                `).join('');
 
-            if (data.all_absent) {
-                alertBanner.innerHTML = `
-                    <div class="alert-banner danger">
-                        ⚠️ No key bearers available today! Alert has been sent.
-                    </div>
-                `;
-            } else {
-                const available = data.total_count - data.absent_count;
-                alertBanner.innerHTML = `
-                    <div class="alert-banner success">
-                        ✓ ${available} of ${data.total_count} key bearer(s) available today
-                    </div>
-                `;
+                if (data.all_absent) {
+                    alertBanner.innerHTML = `
+                        <div class="alert-banner danger">
+                            ⚠️ No key bearers available today! Alert has been sent.
+                        </div>
+                    `;
+                } else {
+                    const available = data.total_count - data.absent_count;
+                    alertBanner.innerHTML = `
+                        <div class="alert-banner success">
+                            ✓ ${available} of ${data.total_count} key bearer(s) available today
+                        </div>
+                    `;
+                }
+            } catch (err) {
+                console.error('Error loading status:', err);
             }
         }
 

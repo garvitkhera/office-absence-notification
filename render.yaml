@@ -7,6 +7,10 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
       - key: SMTP_HOST
         sync: false
       - key: SMTP_PORT
@@ -19,9 +23,3 @@ services:
         sync: false
       - key: FROM_NAME
         sync: false
-      - key: DB_PATH
-        value: /opt/render/project/src/data/absences.db
-    disk:
-      name: key-tracker-data
-      mountPath: /opt/render/project/src/data
-      sizeGB: 1

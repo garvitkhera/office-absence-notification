@@ -1,22 +1,32 @@
 from flask import Flask, render_template, request, jsonify
-import sqlite3
 import json
 import os
 from datetime import datetime, date
+from supabase import create_client, Client
 from email_service import send_alert_email
-from pathlib import Path
+
+# Load .env file for local development
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 
 app = Flask(__name__)
 
-DB_PATH = os.environ.get("DB_PATH", "absences.db")
 CONFIG_PATH = "config.json"
+
+# Supabase client
+supabase: Client = create_client(
+    os.environ.get("SUPABASE_URL", ""),
+    os.environ.get("SUPABASE_KEY", "")
+)
 
 def load_config():
     """Load config from JSON file, override email settings with env vars if present."""
     with open(CONFIG_PATH, "r") as f:
         config = json.load(f)
     
-    # Override email config with environment variables (for production security)
     if os.environ.get("SMTP_HOST"):
         config["email"]["smtp_host"] = os.environ.get("SMTP_HOST")
     if os.environ.get("SMTP_PORT"):
@@ -32,77 +42,32 @@ def load_config():
     
     return config
 
-def get_db():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
-
-def init_db():
-    # Create directory for DB if it doesn't exist
-    db_dir = os.path.dirname(DB_PATH)
-    if db_dir and not os.path.exists(db_dir):
-        os.makedirs(db_dir, exist_ok=True)
-    
-    conn = get_db()
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS absences (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            key_bearer TEXT NOT NULL,
-            absence_date DATE NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            UNIQUE(key_bearer, absence_date)
-        )
-    """)
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS email_log (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            alert_date DATE NOT NULL UNIQUE,
-            sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    """)
-    conn.commit()
-    conn.close()
-
 def check_and_send_alert(target_date):
     """Check if all key bearers are absent and send alert if needed."""
     config = load_config()
     key_bearers = config["key_bearers"]
     
-    conn = get_db()
-    
     # Check if alert already sent for this date
-    existing = conn.execute(
-        "SELECT id FROM email_log WHERE alert_date = ?", 
-        (target_date,)
-    ).fetchone()
+    existing = supabase.table("email_log").select("id").eq("alert_date", target_date).execute()
     
-    if existing:
-        conn.close()
+    if existing.data:
         return {"sent": False, "reason": "already_sent"}
     
     # Get absences for this date
-    absences = conn.execute(
-        "SELECT DISTINCT key_bearer FROM absences WHERE absence_date = ?",
-        (target_date,)
-    ).fetchall()
+    absences = supabase.table("absences").select("key_bearer").eq("absence_date", target_date).execute()
     
-    absent_names = {row["key_bearer"] for row in absences}
+    absent_names = {row["key_bearer"] for row in absences.data}
     all_bearer_names = {kb["name"] for kb in key_bearers}
     
     if absent_names >= all_bearer_names:  # All key bearers are absent
-        # Send email
         success = send_alert_email(config, target_date, key_bearers)
         
         if success:
-            conn.execute("INSERT INTO email_log (alert_date) VALUES (?)", (target_date,))
-            conn.commit()
-            conn.close()
+            supabase.table("email_log").insert({"alert_date": target_date}).execute()
             return {"sent": True, "reason": "all_absent"}
         else:
-            conn.close()
             return {"sent": False, "reason": "email_failed"}
     
-    conn.close()
     return {"sent": False, "reason": "not_all_absent", "absent": len(absent_names), "total": len(all_bearer_names)}
 
 @app.route("/")
@@ -114,30 +79,26 @@ def index():
 def mark_absent():
     data = request.json
     key_bearer = data.get("key_bearer")
-    dates = data.get("dates", [])  # List of date strings YYYY-MM-DD
+    dates = data.get("dates", [])
     
     if not key_bearer or not dates:
         return jsonify({"error": "Missing key_bearer or dates"}), 400
     
-    conn = get_db()
     alerts_sent = []
     
     for d in dates:
         try:
-            conn.execute(
-                "INSERT OR IGNORE INTO absences (key_bearer, absence_date) VALUES (?, ?)",
-                (key_bearer, d)
-            )
-            conn.commit()
+            # Upsert to handle duplicates
+            supabase.table("absences").upsert({
+                "key_bearer": key_bearer,
+                "absence_date": d
+            }, on_conflict="key_bearer,absence_date").execute()
             
-            # Check if alert needs to be sent
             alert_result = check_and_send_alert(d)
             if alert_result["sent"]:
                 alerts_sent.append(d)
         except Exception as e:
             print(f"Error marking absence: {e}")
-    
-    conn.close()
     
     return jsonify({
         "success": True,
@@ -148,14 +109,11 @@ def mark_absent():
 @app.route("/api/absences")
 def get_absences():
     """Get all absences for calendar display."""
-    conn = get_db()
-    rows = conn.execute(
-        "SELECT key_bearer, absence_date FROM absences WHERE absence_date >= date('now')"
-    ).fetchall()
-    conn.close()
+    today = date.today().isoformat()
+    result = supabase.table("absences").select("key_bearer, absence_date").gte("absence_date", today).execute()
     
     absences = {}
-    for row in rows:
+    for row in result.data:
         d = row["absence_date"]
         if d not in absences:
             absences[d] = []
@@ -166,14 +124,10 @@ def get_absences():
 @app.route("/api/my-absences/<key_bearer>")
 def get_my_absences(key_bearer):
     """Get absences for a specific key bearer."""
-    conn = get_db()
-    rows = conn.execute(
-        "SELECT absence_date FROM absences WHERE key_bearer = ? AND absence_date >= date('now')",
-        (key_bearer,)
-    ).fetchall()
-    conn.close()
+    today = date.today().isoformat()
+    result = supabase.table("absences").select("absence_date").eq("key_bearer", key_bearer).gte("absence_date", today).order("absence_date").execute()
     
-    return jsonify([row["absence_date"] for row in rows])
+    return jsonify([row["absence_date"] for row in result.data])
 
 @app.route("/api/cancel-absence", methods=["POST"])
 def cancel_absence():
@@ -181,14 +135,8 @@ def cancel_absence():
     key_bearer = data.get("key_bearer")
     dates = data.get("dates", [])
     
-    conn = get_db()
     for d in dates:
-        conn.execute(
-            "DELETE FROM absences WHERE key_bearer = ? AND absence_date = ?",
-            (key_bearer, d)
-        )
-    conn.commit()
-    conn.close()
+        supabase.table("absences").delete().eq("key_bearer", key_bearer).eq("absence_date", d).execute()
     
     return jsonify({"success": True, "dates_cancelled": dates})
 
@@ -198,14 +146,9 @@ def get_status(date_str):
     config = load_config()
     key_bearers = config["key_bearers"]
     
-    conn = get_db()
-    absences = conn.execute(
-        "SELECT key_bearer FROM absences WHERE absence_date = ?",
-        (date_str,)
-    ).fetchall()
-    conn.close()
+    result = supabase.table("absences").select("key_bearer").eq("absence_date", date_str).execute()
     
-    absent_names = {row["key_bearer"] for row in absences}
+    absent_names = {row["key_bearer"] for row in result.data}
     
     status = []
     for kb in key_bearers:
@@ -225,5 +168,4 @@ def get_status(date_str):
     })
 
 if __name__ == "__main__":
-    init_db()
     app.run(debug=True, host="0.0.0.0", port=5000)
