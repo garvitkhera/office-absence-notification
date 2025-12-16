@@ -166,6 +166,10 @@ def get_status(date_str):
         "absent_count": len(absent_names),
         "total_count": len(key_bearers)
     })
+    
+@app.route("/health")
+def health():
+    return "OK", 200
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)
