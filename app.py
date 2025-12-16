@@ -1,18 +1,36 @@
 from flask import Flask, render_template, request, jsonify
 import sqlite3
 import json
+import os
 from datetime import datetime, date
 from email_service import send_alert_email
 from pathlib import Path
 
 app = Flask(__name__)
 
-DB_PATH = "absences.db"
+DB_PATH = os.environ.get("DB_PATH", "absences.db")
 CONFIG_PATH = "config.json"
 
 def load_config():
+    """Load config from JSON file, override email settings with env vars if present."""
     with open(CONFIG_PATH, "r") as f:
-        return json.load(f)
+        config = json.load(f)
+    
+    # Override email config with environment variables (for production security)
+    if os.environ.get("SMTP_HOST"):
+        config["email"]["smtp_host"] = os.environ.get("SMTP_HOST")
+    if os.environ.get("SMTP_PORT"):
+        config["email"]["smtp_port"] = int(os.environ.get("SMTP_PORT"))
+    if os.environ.get("SMTP_USER"):
+        config["email"]["smtp_user"] = os.environ.get("SMTP_USER")
+    if os.environ.get("SMTP_PASSWORD"):
+        config["email"]["smtp_password"] = os.environ.get("SMTP_PASSWORD")
+    if os.environ.get("FROM_EMAIL"):
+        config["email"]["from_email"] = os.environ.get("FROM_EMAIL")
+    if os.environ.get("FROM_NAME"):
+        config["email"]["from_name"] = os.environ.get("FROM_NAME")
+    
+    return config
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)
@@ -20,6 +38,11 @@ def get_db():
     return conn
 
 def init_db():
+    # Create directory for DB if it doesn't exist
+    db_dir = os.path.dirname(DB_PATH)
+    if db_dir and not os.path.exists(db_dir):
+        os.makedirs(db_dir, exist_ok=True)
+    
     conn = get_db()
     conn.execute("""
         CREATE TABLE IF NOT EXISTS absences (

@@ -1,4 +1,13 @@
 {
+  "email": {
+    "smtp_host": "smtp.gmail.com",
+    "smtp_port": 587,
+    "smtp_user": "",
+    "smtp_password": "",
+    "from_email": "",
+    "from_name": "Park Agility Office Key Tracker",
+    "use_tls": true
+  },
   "key_bearers": [
     {"name": "Brad Burrows", "email": "bburrows@parkagility.com"},
     {"name": "Steve Etsebeth", "email": "setsebeth@parkagility.com"},
@@ -12,5 +21,7 @@
     {"name": "Steve Etsebeth", "email": "setsebeth@parkagility.com"},
     {"name": "Jacob Burrows", "email": "jburrows@parkagility.com"},
     {"name": "Jorge Molina", "email": "jmolina@parkagility.com"}
-  ]
+  ],
+    "company_name": "Park Agility",
+    "timezone": "UTC+11"
 }
