@@ -1,0 +1,16 @@
+{
+  "key_bearers": [
+    {"name": "Brad Burrows", "email": "bburrows@parkagility.com"},
+    {"name": "Steve Etsebeth", "email": "setsebeth@parkagility.com"},
+    {"name": "Jacob Burrows", "email": "jburrows@parkagility.com"},
+    {"name": "Jorge Molina", "email": "jmolina@parkagility.com"}
+  ],
+  "recipients": [
+    {"name": "Garvit Khera", "email": "gkhera@parkagility.com"},
+    {"name": "Nicolas Souchaud", "email": "nsouchaud@parkagility.com"},
+    {"name": "Brad Burrows", "email": "bburrows@parkagility.com"},
+    {"name": "Steve Etsebeth", "email": "setsebeth@parkagility.com"},
+    {"name": "Jacob Burrows", "email": "jburrows@parkagility.com"},
+    {"name": "Jorge Molina", "email": "jmolina@parkagility.com"}
+  ]
+}
