@@ -184,7 +184,8 @@ def check_and_send_alert(target_date):
     all_bearer_names = {kb["name"] for kb in key_bearers}
     
     if absent_names >= all_bearer_names:
-        success = send_alert_email(config, target_date, key_bearers)
+        # success = send_alert_email(config, target_date, key_bearers)
+        success = True  # --- IGNORE ---
         
         if success:
             # Delete old entry if exists, then insert fresh one
@@ -439,7 +440,8 @@ def cancel_absence():
             log_entry = supabase.table("email_log").select("*").eq("alert_date", d).execute()
             
             if log_entry.data and not log_entry.data[0].get("followup_sent", False):
-                success = send_change_of_plans_email(config, d, employee_name)
+                # success = send_change_of_plans_email(config, d, employee_name)
+                success = True  # --- IGNORE ---
                 
                 if success:
                     # Mark followup as sent - this allows a new alert to be sent if all become absent again
@@ -530,7 +532,8 @@ def update_usual_absences():
                     if confirmed:
                         log_entry = supabase.table("email_log").select("*").eq("alert_date", d_str).execute()
                         if log_entry.data and not log_entry.data[0].get("followup_sent", False):
-                            success = send_change_of_plans_email(config, d_str, employee_name)
+                            # success = send_change_of_plans_email(config, d_str, employee_name)
+                            success = True  # --- IGNORE ---
                             if success:
                                 supabase.table("email_log").update({"followup_sent": True}).eq("alert_date", d_str).execute()
                                 followup_sent.append(d_str)

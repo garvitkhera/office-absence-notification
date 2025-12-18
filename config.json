@@ -9,7 +9,7 @@
     "use_tls": true
   },
   "recipients": [
-    {"name": "PA Sydney Office Group", "email": "app@parkagility.com"}
+    {"name": "PA Sydney Office Group", "email": "paoffice@parkagility.com"}
   ],
   "company_name": "Park Agility"
 }
