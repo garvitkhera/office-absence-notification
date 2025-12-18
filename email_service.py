@@ -92,10 +92,10 @@ This is an automated message from the Park Agility Office Presence Tracker. Plea
     
     try:
         if email_config.get("use_tls", True):
-            server = smtplib.SMTP(email_config["smtp_host"], email_config["smtp_port"])
+            server = smtplib.SMTP(email_config["smtp_host"], email_config["smtp_port"], timeout=30)
             server.starttls()
         else:
-            server = smtplib.SMTP_SSL(email_config["smtp_host"], email_config["smtp_port"])
+            server = smtplib.SMTP_SSL(email_config["smtp_host"], email_config["smtp_port"], timeout=30)
         
         server.login(email_config["smtp_user"], email_config["smtp_password"])
         server.sendmail(email_config["from_email"], to_emails, msg.as_string())
@@ -104,6 +104,12 @@ This is an automated message from the Park Agility Office Presence Tracker. Plea
         print(f"Alert email sent for {alert_date} to {len(to_emails)} recipients")
         return True
         
+    except smtplib.SMTPException as e:
+        print(f"SMTP error: {e}")
+        return False
+    except TimeoutError as e:
+        print(f"SMTP timeout: {e}")
+        return False
     except Exception as e:
         print(f"Failed to send email: {e}")
         return False
@@ -191,10 +197,10 @@ This is an automated message from the Park Agility Office Presence Tracker. Plea
     
     try:
         if email_config.get("use_tls", True):
-            server = smtplib.SMTP(email_config["smtp_host"], email_config["smtp_port"])
+            server = smtplib.SMTP(email_config["smtp_host"], email_config["smtp_port"], timeout=30)
             server.starttls()
         else:
-            server = smtplib.SMTP_SSL(email_config["smtp_host"], email_config["smtp_port"])
+            server = smtplib.SMTP_SSL(email_config["smtp_host"], email_config["smtp_port"], timeout=30)
         
         server.login(email_config["smtp_user"], email_config["smtp_password"])
         server.sendmail(email_config["from_email"], to_emails, msg.as_string())
@@ -203,6 +209,12 @@ This is an automated message from the Park Agility Office Presence Tracker. Plea
         print(f"Change of plans email sent for {alert_date} - {employee_name} now available")
         return True
         
+    except smtplib.SMTPException as e:
+        print(f"SMTP error: {e}")
+        return False
+    except TimeoutError as e:
+        print(f"SMTP timeout: {e}")
+        return False
     except Exception as e:
-        print(f"Failed to send change of plans email: {e}")
+        print(f"Failed to send email: {e}")
         return False
