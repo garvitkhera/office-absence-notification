@@ -9,18 +9,13 @@
     "use_tls": true
   },
   "key_bearers": [
-    {"name": "Brad Burrows", "email": "bburrows@parkagility.com"},
     {"name": "Steve Etsebeth", "email": "setsebeth@parkagility.com"},
-    {"name": "Jacob Burrows", "email": "jburrows@parkagility.com"},
-    {"name": "Jorge Molina", "email": "jmolina@parkagility.com"}
+    {"name": "Jorge Molina", "email": "jmolina@parkagility.com"},
+    {"name": "Sarah Jacobs", "email": "sjacobs@parkagility.com"},
+    {"name": "Nicolas Souchaud", "email": "nsouchaud@parkagility.com"}
   ],
   "recipients": [
-    {"name": "Garvit Khera", "email": "gkhera@parkagility.com"},
-    {"name": "Nicolas Souchaud", "email": "nsouchaud@parkagility.com"},
-    {"name": "Brad Burrows", "email": "bburrows@parkagility.com"},
-    {"name": "Steve Etsebeth", "email": "setsebeth@parkagility.com"},
-    {"name": "Jacob Burrows", "email": "jburrows@parkagility.com"},
-    {"name": "Jorge Molina", "email": "jmolina@parkagility.com"}
+    {"name": "Garvit Khera", "email": "gkhera@parkagility.com"}
   ],
   "company_name": "Park Agility",
   "timezone": "UTC+11"

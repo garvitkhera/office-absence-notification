@@ -1,6 +1,6 @@
 # 🔑 Park Agility Office Key Tracker
 
-A simple web app that alerts employees when no key bearers will be in the office.
+A web app that alerts employees when no key bearers will be in the office.
 
 ## The Problem
 
@@ -10,21 +10,16 @@ If everyone who has office keys is absent on the same day, other employees get l
 
 Key bearers mark their absence dates in the app. When **all** key bearers mark the same date as absent, an automatic email alert is sent to all employees.
 
-## How It Works
-
-1. Key bearer selects their name
-2. Picks dates they won't be in office (Today, Tomorrow, or calendar selection)
-3. Clicks "Not Going to Office"
-4. If all key bearers are now absent for that date → email alert sent immediately
-5. Employees receive notification to make alternative arrangements
-
 ## Features
 
-- Quick date selection (Today / Tomorrow / Calendar)
-- View and cancel your scheduled absences
-- Real-time status of today's key bearer availability
-- Automatic email alerts (sent only once per date)
-- Clean, mobile-friendly interface
+- **Usual Weekly Pattern** - Set your regular days in/out of office (auto-populates absences)
+- **Quick date selection** - Today, Tomorrow, or calendar picker
+- **2-Week Overview** - See all key bearers' availability for current and next week
+- **Smart Email Alerts**:
+  - "No key bearers available" when all mark absent
+  - "Change of plans" when someone becomes available after an alert was sent
+- **Confirmation Popups** - Before any email is triggered
+- **Auto-sync** - Populates next month's absences on the 25th, cleans up old data on the 5th
 
 ## Tech Stack
 
@@ -33,19 +28,18 @@ Key bearers mark their absence dates in the app. When **all** key bearers mark t
 - **Hosting:** Render.com
 - **Email:** Outlook / Office 365
 
-**Quick summary:**
-1. Create Supabase project → run `supabase_setup.sql`
-2. Push code to GitHub
-3. Deploy on Render → add environment variables
-4. Set up UptimeRobot to ping `/health` every 5 min (keeps free tier active)
+## Deployment
+
+1. **Supabase:** Create project → run `supabase_setup.sql` in SQL Editor
+2. **GitHub:** Push code to repository
+3. **Render:** Deploy from GitHub → add environment variables
+4. **UptimeRobot:** Ping `/health` every 5 min (keeps free tier active)
 
 ## Configuration
 
 Edit `config.json` to update:
-- **key_bearers** - people who have office keys
-- **recipients** - people who receive alert emails
-
-Email credentials are stored securely as environment variables, not in code.
+- **key_bearers** - People who have office keys
+- **recipients** - People who receive alert emails
 
 ## Environment Variables
 

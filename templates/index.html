@@ -9,14 +9,11 @@
         :root {
             --pa-dark-blue: #1e2a5e;
             --pa-green: #3dbb91;
+            --pa-red: #dc2626;
             --pa-white: #ffffff;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -25,16 +22,14 @@
             padding: 20px;
         }
 
-        .container {
-            max-width: 500px;
-            margin: 0 auto;
-        }
+        .container { max-width: 600px; margin: 0 auto; }
 
         .card {
             background: white;
             border-radius: 16px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
             overflow: hidden;
+            margin-bottom: 20px;
         }
 
         .header {
@@ -44,31 +39,13 @@
             text-align: center;
         }
 
-        .header-logo {
-            width: 80px;
-            height: auto;
-            margin-bottom: 16px;
-        }
+        .header-logo { width: 80px; height: auto; margin-bottom: 16px; }
+        .header h1 { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+        .header p { opacity: 0.9; font-size: 14px; color: var(--pa-green); }
 
-        .header h1 {
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
+        .content { padding: 30px; }
 
-        .header p {
-            opacity: 0.9;
-            font-size: 14px;
-            color: var(--pa-green);
-        }
-
-        .content {
-            padding: 30px;
-        }
-
-        .form-group {
-            margin-bottom: 24px;
-        }
+        .form-group { margin-bottom: 24px; }
 
         label {
             display: block;
@@ -86,14 +63,71 @@
             font-size: 16px;
             background: white;
             cursor: pointer;
-            transition: border-color 0.2s;
         }
 
-        select:focus {
-            outline: none;
-            border-color: var(--pa-dark-blue);
+        select:focus { outline: none; border-color: var(--pa-dark-blue); }
+
+        /* Usual Absence Pattern */
+        .usual-pattern {
+            display: none;
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            border: 2px solid #e2e8f0;
         }
 
+        .usual-pattern.show { display: block; }
+
+        .usual-pattern-title {
+            font-weight: 600;
+            color: var(--pa-dark-blue);
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+
+        .weekday-boxes {
+            display: flex;
+            gap: 8px;
+            justify-content: space-between;
+        }
+
+        .weekday-box {
+            flex: 1;
+            text-align: center;
+            padding: 12px 8px;
+            border-radius: 10px;
+            cursor: pointer;
+            border: 2px solid #e5e7eb;
+            background: white;
+            transition: all 0.2s;
+        }
+
+        .weekday-box:hover { border-color: var(--pa-dark-blue); }
+
+        .weekday-box.absent {
+            background: var(--pa-red);
+            border-color: var(--pa-red);
+            color: white;
+        }
+
+        .weekday-box.present {
+            background: var(--pa-green);
+            border-color: var(--pa-green);
+            color: white;
+        }
+
+        .weekday-box .day-label { font-size: 12px; font-weight: 600; }
+        .weekday-box .day-status { font-size: 10px; margin-top: 4px; opacity: 0.9; }
+
+        .usual-pattern-hint {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 12px;
+            text-align: center;
+        }
+
+        /* Quick buttons and date picker */
         .quick-buttons {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -112,21 +146,10 @@
             transition: all 0.2s;
         }
 
-        .quick-btn:hover {
-            border-color: var(--pa-dark-blue);
-            background: #f0f4ff;
-        }
+        .quick-btn:hover { border-color: var(--pa-dark-blue); background: #f0f4ff; }
+        .quick-btn.active { border-color: var(--pa-dark-blue); background: var(--pa-dark-blue); color: white; }
 
-        .quick-btn.active {
-            border-color: var(--pa-dark-blue);
-            background: var(--pa-dark-blue);
-            color: white;
-        }
-
-        .date-picker-wrapper {
-            display: flex;
-            gap: 8px;
-        }
+        .date-picker-wrapper { display: flex; gap: 8px; }
 
         .date-input {
             flex: 1;
@@ -135,13 +158,9 @@
             border-radius: 10px;
             font-size: 16px;
             cursor: pointer;
-            transition: border-color 0.2s;
         }
 
-        .date-input:focus {
-            outline: none;
-            border-color: var(--pa-dark-blue);
-        }
+        .date-input:focus { outline: none; border-color: var(--pa-dark-blue); }
 
         .clear-btn {
             padding: 14px 18px;
@@ -150,15 +169,10 @@
             background: white;
             font-size: 16px;
             cursor: pointer;
-            transition: all 0.2s;
             color: #666;
         }
 
-        .clear-btn:hover {
-            border-color: #ef4444;
-            background: #fee2e2;
-            color: #dc2626;
-        }
+        .clear-btn:hover { border-color: #ef4444; background: #fee2e2; color: #dc2626; }
 
         .submit-btn {
             width: 100%;
@@ -173,20 +187,11 @@
             transition: transform 0.2s, box-shadow 0.2s;
         }
 
-        .submit-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(61, 187, 145, 0.4);
-        }
+        .submit-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(61, 187, 145, 0.4); }
+        .submit-btn:disabled { background: #9ca3af; cursor: not-allowed; transform: none; box-shadow: none; }
 
-        .submit-btn:disabled {
-            background: #9ca3af;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-
-        /* Update Absence Section */
-        .update-absence-section {
+        /* Scheduled Absences */
+        .scheduled-absences {
             margin-top: 24px;
             padding: 20px;
             background: #f8fafc;
@@ -195,37 +200,19 @@
             display: none;
         }
 
-        .update-absence-section.show {
-            display: block;
-        }
+        .scheduled-absences.show { display: block; }
 
-        .update-absence-header {
+        .scheduled-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
             margin-bottom: 16px;
         }
 
-        .update-absence-title {
-            font-weight: 600;
-            color: var(--pa-dark-blue);
-            font-size: 15px;
-        }
+        .scheduled-title { font-weight: 600; color: var(--pa-dark-blue); font-size: 15px; }
+        .absence-count { background: var(--pa-dark-blue); color: white; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
 
-        .absence-count {
-            background: var(--pa-dark-blue);
-            color: white;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-
-        .absence-list {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
+        .absence-list { display: flex; flex-direction: column; gap: 8px; }
 
         .absence-item {
             display: flex;
@@ -237,17 +224,10 @@
             border: 1px solid #e5e7eb;
         }
 
-        .absence-date {
-            font-size: 14px;
-            color: #374151;
-        }
+        .absence-date { font-size: 14px; color: #374151; }
+        .absence-date-day { font-weight: 600; color: var(--pa-dark-blue); }
 
-        .absence-date-day {
-            font-weight: 600;
-            color: var(--pa-dark-blue);
-        }
-
-        .remove-absence-btn {
+        .remove-btn {
             width: 28px;
             height: 28px;
             border: none;
@@ -259,104 +239,64 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.2s;
         }
 
-        .remove-absence-btn:hover {
-            background: #dc2626;
-            color: white;
-        }
+        .remove-btn:hover { background: #dc2626; color: white; }
 
-        .no-absences {
-            text-align: center;
-            color: #6b7280;
-            font-size: 14px;
-            padding: 20px;
-        }
+        /* Two Week Status */
+        .week-status-card { margin-top: 20px; }
+        .week-section { margin-bottom: 24px; }
+        .week-section:last-child { margin-bottom: 0; }
+        .week-label { font-weight: 600; color: var(--pa-dark-blue); margin-bottom: 12px; font-size: 14px; }
 
-        /* Status Section */
-        .status-section {
-            margin-top: 24px;
-            padding-top: 24px;
-            border-top: 1px solid #e5e7eb;
-        }
-
-        .status-title {
-            font-weight: 600;
-            color: #374151;
-            margin-bottom: 16px;
-            font-size: 14px;
-        }
-
-        .status-grid {
+        .week-grid {
             display: grid;
-            gap: 10px;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
         }
 
-        .status-item {
+        .day-column {
+            background: #f9fafb;
+            border-radius: 10px;
+            padding: 12px 8px;
+            text-align: center;
+        }
+
+        .day-column.all-absent {
+            background: #fee2e2;
+            border: 2px solid var(--pa-red);
+        }
+
+        .day-header { font-size: 12px; font-weight: 600; color: var(--pa-dark-blue); }
+        .day-date { font-size: 11px; color: #6b7280; margin-top: 2px; }
+
+        .bearer-dots { margin-top: 10px; display: flex; flex-direction: column; gap: 4px; }
+
+        .bearer-dot {
             display: flex;
             align-items: center;
-            padding: 12px 16px;
-            background: #f9fafb;
-            border-radius: 8px;
+            gap: 6px;
+            font-size: 10px;
+            color: #374151;
         }
 
-        .status-dot {
-            width: 10px;
-            height: 10px;
+        .dot {
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
-            margin-right: 12px;
         }
 
-        .status-dot.available {
-            background: var(--pa-green);
+        .dot.available { background: var(--pa-green); }
+        .dot.absent { background: var(--pa-red); }
+
+        .bearer-name {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 60px;
         }
 
-        .status-dot.absent {
-            background: var(--pa-dark-blue);
-        }
-
-        .status-name {
-            flex: 1;
-            font-size: 14px;
-        }
-
-        .status-badge {
-            font-size: 12px;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-weight: 500;
-        }
-
-        .status-badge.available {
-            background: #d4f5e9;
-            color: #1a7a5a;
-        }
-
-        .status-badge.absent {
-            background: #e8eaf6;
-            color: var(--pa-dark-blue);
-        }
-
-        .alert-banner {
-            margin-top: 16px;
-            padding: 16px;
-            border-radius: 10px;
-            text-align: center;
-            font-weight: 500;
-        }
-
-        .alert-banner.danger {
-            background: #fef3e6;
-            color: #b45309;
-            border: 1px solid #fcd9b6;
-        }
-
-        .alert-banner.success {
-            background: #d4f5e9;
-            color: #1a7a5a;
-        }
-
+        /* Toast */
         .toast {
             position: fixed;
             bottom: 20px;
@@ -372,23 +312,56 @@
             z-index: 1000;
         }
 
-        .toast.show {
-            transform: translateX(-50%) translateY(0);
-            opacity: 1;
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .toast.success { background: var(--pa-green); }
+        .toast.error { background: #dc2626; }
+        .toast.warning { background: #f59e0b; }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
         }
 
-        .toast.success {
-            background: var(--pa-green);
+        .modal-overlay.show { display: flex; }
+
+        .modal {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
         }
 
-        .toast.error {
-            background: #dc2626;
+        .modal-icon { font-size: 48px; margin-bottom: 16px; }
+        .modal-title { font-size: 18px; font-weight: 600; color: var(--pa-dark-blue); margin-bottom: 12px; }
+        .modal-message { font-size: 14px; color: #6b7280; margin-bottom: 24px; line-height: 1.6; }
+
+        .modal-buttons { display: flex; gap: 12px; }
+
+        .modal-btn {
+            flex: 1;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
         }
 
-        .flatpickr-calendar {
-            border-radius: 12px !important;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15) !important;
-        }
+        .modal-btn.cancel { background: #e5e7eb; color: #374151; }
+        .modal-btn.cancel:hover { background: #d1d5db; }
+        .modal-btn.confirm { background: var(--pa-green); color: white; }
+        .modal-btn.confirm:hover { background: #2fa87a; }
     </style>
 </head>
 <body>
@@ -410,40 +383,77 @@
                     </select>
                 </div>
 
-                <!-- Update Absence Section -->
-                <div class="update-absence-section" id="updateAbsenceSection">
-                    <div class="update-absence-header">
-                        <span class="update-absence-title">📅 Your Scheduled Absences</span>
+                <!-- Usual Absence Pattern -->
+                <div class="usual-pattern" id="usualPattern">
+                    <div class="usual-pattern-title">📅 Your Usual Weekly Pattern</div>
+                    <div class="weekday-boxes" id="weekdayBoxes">
+                        <div class="weekday-box" data-day="monday">
+                            <div class="day-label">Mon</div>
+                            <div class="day-status">-</div>
+                        </div>
+                        <div class="weekday-box" data-day="tuesday">
+                            <div class="day-label">Tue</div>
+                            <div class="day-status">-</div>
+                        </div>
+                        <div class="weekday-box" data-day="wednesday">
+                            <div class="day-label">Wed</div>
+                            <div class="day-status">-</div>
+                        </div>
+                        <div class="weekday-box" data-day="thursday">
+                            <div class="day-label">Thu</div>
+                            <div class="day-status">-</div>
+                        </div>
+                        <div class="weekday-box" data-day="friday">
+                            <div class="day-label">Fri</div>
+                            <div class="day-status">-</div>
+                        </div>
+                    </div>
+                    <div class="usual-pattern-hint">Click a day to toggle your usual presence. Green = In Office, Red = Not Coming</div>
+                </div>
+
+                <!-- Scheduled Absences -->
+                <div class="scheduled-absences" id="scheduledAbsences">
+                    <div class="scheduled-header">
+                        <span class="scheduled-title">📋 Your Scheduled Absences</span>
                         <span class="absence-count" id="absenceCount">0</span>
                     </div>
-                    <div class="absence-list" id="absenceList">
-                        <!-- Populated by JS -->
-                    </div>
+                    <div class="absence-list" id="absenceList"></div>
                 </div>
 
                 <div class="form-group">
-                    <label>When are you not coming?</label>
+                    <label>Add specific dates you're not coming</label>
                     <div class="quick-buttons">
                         <button class="quick-btn" data-quick="today">📅 Today</button>
                         <button class="quick-btn" data-quick="tomorrow">📆 Tomorrow</button>
                     </div>
                     <div class="date-picker-wrapper">
                         <input type="text" id="datePicker" class="date-input" placeholder="Or select dates...">
-                        <button type="button" id="clearDates" class="clear-btn" title="Clear dates">✕</button>
+                        <button type="button" id="clearDates" class="clear-btn">✕</button>
                     </div>
                 </div>
 
-                <button class="submit-btn" id="submitBtn" disabled>
-                    🚫 Not Going to Office
-                </button>
+                <button class="submit-btn" id="submitBtn" disabled>🚫 Not Going to Office</button>
+            </div>
+        </div>
 
-                <div class="status-section">
-                    <div class="status-title">Today's Key Bearer Status</div>
-                    <div class="status-grid" id="statusGrid">
-                        <!-- Populated by JS -->
-                    </div>
-                    <div id="alertBanner"></div>
-                </div>
+        <!-- Two Week Status -->
+        <div class="card week-status-card">
+            <div class="content">
+                <label>🗓️ Two Week Overview</label>
+                <div id="weeklyStatus"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <div class="modal-icon" id="modalIcon">⚠️</div>
+            <div class="modal-title" id="modalTitle">Confirm Action</div>
+            <div class="modal-message" id="modalMessage">Are you sure?</div>
+            <div class="modal-buttons">
+                <button class="modal-btn cancel" id="modalCancel">No, Cancel</button>
+                <button class="modal-btn confirm" id="modalConfirm">Yes, Proceed</button>
             </div>
         </div>
     </div>
@@ -455,14 +465,18 @@
         const keyBearerSelect = document.getElementById('keyBearer');
         const datePicker = document.getElementById('datePicker');
         const submitBtn = document.getElementById('submitBtn');
-        const statusGrid = document.getElementById('statusGrid');
-        const alertBanner = document.getElementById('alertBanner');
         const quickBtns = document.querySelectorAll('.quick-btn');
-        const updateAbsenceSection = document.getElementById('updateAbsenceSection');
+        const usualPattern = document.getElementById('usualPattern');
+        const weekdayBoxes = document.getElementById('weekdayBoxes');
+        const scheduledAbsences = document.getElementById('scheduledAbsences');
         const absenceList = document.getElementById('absenceList');
         const absenceCount = document.getElementById('absenceCount');
+        const weeklyStatus = document.getElementById('weeklyStatus');
+        const modalOverlay = document.getElementById('modalOverlay');
 
         let selectedDates = [];
+        let usualAbsences = {};
+        let pendingAction = null;
         let fp;
 
         // Initialize Flatpickr
@@ -470,14 +484,13 @@
             mode: 'multiple',
             dateFormat: 'Y-m-d',
             minDate: 'today',
-            onChange: function(dates, dateStr) {
+            onChange: function(dates) {
                 selectedDates = dates.map(d => formatDate(d));
                 quickBtns.forEach(btn => btn.classList.remove('active'));
                 updateSubmitBtn();
             }
         });
 
-        // Clear button handler
         document.getElementById('clearDates').addEventListener('click', () => {
             fp.clear();
             selectedDates = [];
@@ -485,12 +498,10 @@
             updateSubmitBtn();
         });
 
-        // Format date to YYYY-MM-DD
         function formatDate(date) {
             return date.toISOString().split('T')[0];
         }
 
-        // Format date for display
         function formatDateDisplay(dateStr) {
             const date = new Date(dateStr + 'T00:00:00');
             const day = date.toLocaleDateString('en-US', { weekday: 'short' });
@@ -498,10 +509,7 @@
             return { day, full };
         }
 
-        // Get today and tomorrow dates
-        function getToday() {
-            return formatDate(new Date());
-        }
+        function getToday() { return formatDate(new Date()); }
 
         function getTomorrow() {
             const tomorrow = new Date();
@@ -509,39 +517,94 @@
             return formatDate(tomorrow);
         }
 
-        // Quick button handlers
         quickBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 quickBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 fp.clear();
-                
-                if (btn.dataset.quick === 'today') {
-                    selectedDates = [getToday()];
-                } else if (btn.dataset.quick === 'tomorrow') {
-                    selectedDates = [getTomorrow()];
-                }
+                selectedDates = btn.dataset.quick === 'today' ? [getToday()] : [getTomorrow()];
                 updateSubmitBtn();
             });
         });
 
-        // Update submit button state
         function updateSubmitBtn() {
-            const hasBearer = keyBearerSelect.value !== '';
-            const hasDates = selectedDates.length > 0;
-            submitBtn.disabled = !(hasBearer && hasDates);
+            submitBtn.disabled = !(keyBearerSelect.value && selectedDates.length > 0);
         }
 
         keyBearerSelect.addEventListener('change', () => {
             updateSubmitBtn();
-            loadMyAbsences();
+            if (keyBearerSelect.value) {
+                usualPattern.classList.add('show');
+                loadUsualAbsences();
+                loadMyAbsences();
+            } else {
+                usualPattern.classList.remove('show');
+                scheduledAbsences.classList.remove('show');
+            }
         });
 
-        // Load user's absences
+        // Load usual absence pattern
+        async function loadUsualAbsences() {
+            const bearer = keyBearerSelect.value;
+            if (!bearer) return;
+
+            try {
+                const res = await fetch(`/api/usual-absences/${encodeURIComponent(bearer)}`);
+                usualAbsences = await res.json();
+                updateWeekdayBoxes();
+            } catch (err) {
+                console.error('Error loading usual absences:', err);
+            }
+        }
+
+        function updateWeekdayBoxes() {
+            const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+            days.forEach(day => {
+                const box = weekdayBoxes.querySelector(`[data-day="${day}"]`);
+                const status = box.querySelector('.day-status');
+                
+                box.classList.remove('absent', 'present');
+                if (usualAbsences[day]) {
+                    box.classList.add('absent');
+                    status.textContent = 'Out';
+                } else {
+                    box.classList.add('present');
+                    status.textContent = 'In';
+                }
+            });
+        }
+
+        // Toggle weekday
+        weekdayBoxes.querySelectorAll('.weekday-box').forEach(box => {
+            box.addEventListener('click', async () => {
+                const day = box.dataset.day;
+                usualAbsences[day] = !usualAbsences[day];
+                updateWeekdayBoxes();
+                
+                await saveUsualAbsences();
+                showToast('Usual weekly pattern updated. Update again if this changes.', 'warning');
+                loadWeeklyStatus();
+                loadMyAbsences();
+            });
+        });
+
+        async function saveUsualAbsences() {
+            const bearer = keyBearerSelect.value;
+            await fetch('/api/usual-absences', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    key_bearer: bearer,
+                    ...usualAbsences
+                })
+            });
+        }
+
+        // Load scheduled absences
         async function loadMyAbsences() {
             const bearer = keyBearerSelect.value;
             if (!bearer) {
-                updateAbsenceSection.classList.remove('show');
+                scheduledAbsences.classList.remove('show');
                 return;
             }
 
@@ -550,7 +613,7 @@
                 const absences = await res.json();
 
                 if (absences.length > 0) {
-                    updateAbsenceSection.classList.add('show');
+                    scheduledAbsences.classList.add('show');
                     absenceCount.textContent = absences.length;
                     
                     absenceList.innerHTML = absences.map(d => {
@@ -560,47 +623,93 @@
                                 <span class="absence-date">
                                     <span class="absence-date-day">${day}</span> · ${full}
                                 </span>
-                                <button class="remove-absence-btn" onclick="cancelAbsence('${d}')" title="Remove this date">✕</button>
+                                <button class="remove-btn" onclick="removeAbsence('${d}')">✕</button>
                             </div>
                         `;
                     }).join('');
                 } else {
-                    updateAbsenceSection.classList.remove('show');
+                    scheduledAbsences.classList.remove('show');
                 }
             } catch (err) {
-                console.error('Error loading absences:', err);
-                updateAbsenceSection.classList.remove('show');
+                scheduledAbsences.classList.remove('show');
             }
         }
 
-        // Cancel an absence
-        async function cancelAbsence(date) {
+        // Remove absence with confirmation
+        async function removeAbsence(date) {
             const bearer = keyBearerSelect.value;
             
-            try {
-                const res = await fetch('/api/cancel-absence', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ key_bearer: bearer, dates: [date] })
-                });
+            // Check if this will trigger email
+            const checkRes = await fetch('/api/check-removal-impact', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ key_bearer: bearer, dates: [date] })
+            });
+            const checkData = await checkRes.json();
 
-                if (res.ok) {
-                    showToast('Absence removed', 'success');
-                    loadMyAbsences();
-                    loadStatus();
-                } else {
-                    showToast('Failed to remove absence', 'error');
-                }
-            } catch (err) {
-                showToast('Error removing absence', 'error');
+            if (checkData.will_trigger_email) {
+                showModal(
+                    '📧',
+                    'Email Alert Will Be Sent',
+                    `Removing your absence will notify the Sydney office that you are now coming on ${formatDateDisplay(date).full}. Do you want to proceed?`,
+                    async () => {
+                        await doRemoveAbsence(bearer, date, true);
+                    }
+                );
+            } else {
+                await doRemoveAbsence(bearer, date, false);
             }
         }
 
-        // Submit absence
+        async function doRemoveAbsence(bearer, date, confirmed) {
+            const res = await fetch('/api/cancel-absence', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ key_bearer: bearer, dates: [date], confirmed })
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                if (data.followup_emails_sent?.length > 0) {
+                    showToast('Absence removed & notification sent!', 'success');
+                } else {
+                    showToast('Absence removed', 'success');
+                }
+                loadMyAbsences();
+                loadWeeklyStatus();
+            }
+        }
+
+        // Submit absence with confirmation
         submitBtn.addEventListener('click', async () => {
             const bearer = keyBearerSelect.value;
             if (!bearer || selectedDates.length === 0) return;
 
+            // Check if this will trigger email
+            const checkRes = await fetch('/api/check-absence-impact', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ key_bearer: bearer, dates: selectedDates })
+            });
+            const checkData = await checkRes.json();
+
+            if (checkData.will_trigger_email) {
+                const triggerDatesStr = checkData.trigger_dates.map(d => formatDateDisplay(d).full).join(', ');
+                showModal(
+                    '📧',
+                    'Email Alert Will Be Sent',
+                    `This will send an email to the Sydney office that NO key bearers are available on: ${triggerDatesStr}. Do you want to proceed?`,
+                    async () => {
+                        await doMarkAbsent(true);
+                    }
+                );
+            } else {
+                await doMarkAbsent(false);
+            }
+        });
+
+        async function doMarkAbsent(confirmed) {
+            const bearer = keyBearerSelect.value;
             submitBtn.disabled = true;
             submitBtn.textContent = 'Saving...';
 
@@ -610,7 +719,8 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         key_bearer: bearer,
-                        dates: selectedDates
+                        dates: selectedDates,
+                        confirmed
                     })
                 });
 
@@ -618,16 +728,15 @@
 
                 if (data.success) {
                     let msg = `Marked absent for ${data.dates_marked.length} day(s)`;
-                    if (data.alerts_sent.length > 0) {
-                        msg += ` • Alert sent for ${data.alerts_sent.length} day(s)`;
+                    if (data.alerts_sent?.length > 0) {
+                        msg += ` • Alert sent!`;
                     }
                     showToast(msg, 'success');
                     
-                    // Reset form
                     selectedDates = [];
                     fp.clear();
                     quickBtns.forEach(btn => btn.classList.remove('active'));
-                    loadStatus();
+                    loadWeeklyStatus();
                     loadMyAbsences();
                 }
             } catch (err) {
@@ -637,55 +746,84 @@
             submitBtn.disabled = false;
             submitBtn.textContent = '🚫 Not Going to Office';
             updateSubmitBtn();
-        });
+        }
 
-        // Load status for today
-        async function loadStatus() {
-            const today = getToday();
-            
+        // Load weekly status
+        async function loadWeeklyStatus() {
             try {
-                const res = await fetch(`/api/status/${today}`);
+                const res = await fetch('/api/weekly-status');
                 const data = await res.json();
 
-                statusGrid.innerHTML = data.key_bearers.map(kb => `
-                    <div class="status-item">
-                        <div class="status-dot ${kb.absent ? 'absent' : 'available'}"></div>
-                        <span class="status-name">${kb.name}</span>
-                        <span class="status-badge ${kb.absent ? 'absent' : 'available'}">
-                            ${kb.absent ? 'Not Coming' : 'Available'}
-                        </span>
-                    </div>
-                `).join('');
+                let html = '';
+                data.weeks.forEach(week => {
+                    html += `
+                        <div class="week-section">
+                            <div class="week-label">${week.label}</div>
+                            <div class="week-grid">
+                                ${week.days.map(day => `
+                                    <div class="day-column ${day.all_absent ? 'all-absent' : ''}">
+                                        <div class="day-header">${day.day_name}</div>
+                                        <div class="day-date">${day.month} ${day.day_num}</div>
+                                        <div class="bearer-dots">
+                                            ${day.bearers.map(b => `
+                                                <div class="bearer-dot">
+                                                    <div class="dot ${b.absent ? 'absent' : 'available'}"></div>
+                                                    <span class="bearer-name" title="${b.name}">${b.name.split(' ')[0]}</span>
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                });
 
-                if (data.all_absent) {
-                    alertBanner.innerHTML = `
-                        <div class="alert-banner danger">
-                            ⚠️ No key bearers available today! Alert has been sent.
-                        </div>
-                    `;
-                } else {
-                    const available = data.total_count - data.absent_count;
-                    alertBanner.innerHTML = `
-                        <div class="alert-banner success">
-                            ✓ ${available} of ${data.total_count} key bearer(s) available today
-                        </div>
-                    `;
-                }
+                weeklyStatus.innerHTML = html;
             } catch (err) {
-                console.error('Error loading status:', err);
+                console.error('Error loading weekly status:', err);
             }
         }
 
-        // Toast notification
+        // Modal functions
+        function showModal(icon, title, message, onConfirm) {
+            document.getElementById('modalIcon').textContent = icon;
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalMessage').textContent = message;
+            pendingAction = onConfirm;
+            modalOverlay.classList.add('show');
+        }
+
+        document.getElementById('modalCancel').addEventListener('click', () => {
+            modalOverlay.classList.remove('show');
+            pendingAction = null;
+        });
+
+        document.getElementById('modalConfirm').addEventListener('click', async () => {
+            modalOverlay.classList.remove('show');
+            if (pendingAction) {
+                await pendingAction();
+                pendingAction = null;
+            }
+        });
+
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) {
+                modalOverlay.classList.remove('show');
+                pendingAction = null;
+            }
+        });
+
+        // Toast
         function showToast(message, type = 'success') {
             const toast = document.getElementById('toast');
             toast.textContent = message;
             toast.className = `toast ${type} show`;
-            setTimeout(() => toast.classList.remove('show'), 3000);
+            setTimeout(() => toast.classList.remove('show'), 4000);
         }
 
         // Initial load
-        loadStatus();
+        loadWeeklyStatus();
     </script>
 </body>
 </html>
