@@ -1,25 +1,19 @@
-# 🔑 Park Agility Office Key Tracker
+# Park Agility Office Presence Tracker
 
-A web app that alerts employees when no key bearers will be in the office.
-
-## The Problem
-
-If everyone who has office keys is absent on the same day, other employees get locked out.
-
-## The Solution
-
-Key bearers mark their absence dates in the app. When **all** key bearers mark the same date as absent, an automatic email alert is sent to all employees.
+A web app to track employee office presence and alert when no key bearers are available.
 
 ## Features
 
-- **Usual Weekly Pattern** - Set your regular days in/out of office (auto-populates absences)
-- **Quick date selection** - Today, Tomorrow, or calendar picker
-- **2-Week Overview** - See all key bearers' availability for current and next week
+- **Employee Management** - All employees tracked in database with "Has Key" status
+- **Usual Weekly Pattern** - Set regular days in/out of office (auto-populates absences)
+- **Quick Absence Marking** - Today, Tomorrow, or calendar picker
+- **2-Week Overview** - See all employees' availability with key holder indicators
 - **Smart Email Alerts**:
-  - "No key bearers available" when all mark absent
-  - "Change of plans" when someone becomes available after an alert was sent
-- **Confirmation Popups** - Before any email is triggered
-- **Auto-sync** - Populates next month's absences on the 25th, cleans up old data on the 5th
+  - "No key bearers available" when all key holders mark absent
+  - "Change of plans" when someone becomes available after alert was sent
+- **Confirmation Popups** - Before any email-triggering action
+- **Sydney Timezone** - Auto-handles daylight savings
+- **Auto-sync** - Populates next month on 25th, cleans up old data on 5th
 
 ## Tech Stack
 
@@ -27,6 +21,7 @@ Key bearers mark their absence dates in the app. When **all** key bearers mark t
 - **Database:** Supabase (PostgreSQL)
 - **Hosting:** Render.com
 - **Email:** Outlook / Office 365
+- **Timezone:** pytz (Australia/Sydney)
 
 ## Deployment
 
@@ -37,9 +32,8 @@ Key bearers mark their absence dates in the app. When **all** key bearers mark t
 
 ## Configuration
 
-Edit `config.json` to update:
-- **key_bearers** - People who have office keys
-- **recipients** - People who receive alert emails
+- **Employees:** Managed in Supabase `employees` table
+- **Recipients:** Edit `config.json` for email alert recipients
 
 ## Environment Variables
 
@@ -53,6 +47,14 @@ Edit `config.json` to update:
 | `SMTP_PASSWORD` | Outlook app password |
 | `FROM_EMAIL` | Sender email address |
 | `FROM_NAME` | Sender display name |
+
+## Database Tables
+
+- **employees** - name, email, has_key
+- **absences** - employee_name, absence_date
+- **usual_absences** - employee_name, monday-friday booleans
+- **email_log** - alert_date, followup_sent
+- **sync_log** - tracks monthly sync operations
 
 ## License
 

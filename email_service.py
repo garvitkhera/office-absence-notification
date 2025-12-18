@@ -15,9 +15,12 @@ def send_alert_email(config, alert_date, absent_bearers):
     to_emails = [r["email"] for r in recipients]
     
     msg = MIMEMultipart("alternative")
-    msg["Subject"] = f"🔑 Park Agility Office Alert - No Key Bearers Available - {formatted_date}"
+    msg["Subject"] = f"Park Agility Office Alert - No Key Bearers Available - {formatted_date}"
     msg["From"] = f"{email_config['from_name']} <{email_config['from_email']}>"
     msg["To"] = ", ".join(to_emails)
+    msg["X-Priority"] = "1"
+    msg["X-MSMail-Priority"] = "High"
+    msg["Importance"] = "High"
     
     text_content = f"""
 PARK AGILITY - OFFICE ACCESS ALERT
@@ -32,13 +35,14 @@ Key Bearers Status:
 Please make alternative arrangements if you need office access on this day.
 
 ---
-This is an automated message from the Park Agility Office Key Tracker.
+This is an automated message from the Park Agility Office Presence Tracker. Please do not reply to this email. The inbox is not monitored.
 """
     
     html_content = f"""
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
     <style>
         body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }}
         .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
@@ -49,9 +53,8 @@ This is an automated message from the Park Agility Office Key Tracker.
         .date-box {{ background: white; padding: 20px; border-radius: 8px; text-align: center; margin-bottom: 20px; border-left: 4px solid #dc2626; }}
         .date-box h2 {{ margin: 0; color: #dc2626; font-size: 20px; }}
         .status-list {{ background: white; padding: 20px; border-radius: 8px; }}
-        .status-item {{ padding: 10px 0; border-bottom: 1px solid #eee; display: flex; align-items: center; }}
+        .status-item {{ padding: 10px 0; border-bottom: 1px solid #eee; }}
         .status-item:last-child {{ border-bottom: none; }}
-        .status-icon {{ width: 24px; height: 24px; background: #dc2626; border-radius: 50%; margin-right: 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; }}
         .footer {{ text-align: center; margin-top: 20px; color: #888; font-size: 12px; }}
         .warning-box {{ margin-top: 20px; padding: 15px; background: #fef3e6; border-radius: 8px; color: #b45309; border: 1px solid #fcd9b6; }}
     </style>
@@ -59,33 +62,33 @@ This is an automated message from the Park Agility Office Key Tracker.
 <body>
     <div class="container">
         <div class="header">
-            <h1>Park Agility Office Key Tracker</h1>
+            <h1>Park Agility Office Presence Tracker</h1>
             <div class="tagline">FASTER.SMARTER.GREENER.</div>
         </div>
         <div class="content">
             <div class="date-box">
-                <h2>⚠️ {formatted_date}</h2>
+                <h2>{formatted_date}</h2>
                 <p style="margin: 10px 0 0 0; color: #666;">No key bearers available</p>
             </div>
             <p><strong>All key bearers</strong> have indicated they will NOT be in the office on this date.</p>
             <div class="status-list">
                 <h3 style="margin-top: 0; color: #1e2a5e;">Key Bearers Status:</h3>
-                {''.join([f'<div class="status-item"><span class="status-icon">✕</span><span>{kb["name"]} - Not Available</span></div>' for kb in absent_bearers])}
+                {''.join([f'<div class="status-item">{kb["name"]} - Not Available</div>' for kb in absent_bearers])}
             </div>
             <div class="warning-box">
-                ⚠️ Please make alternative arrangements if you need office access on this day.
+                Please make alternative arrangements if you need office access on this day.
             </div>
         </div>
         <div class="footer">
-            This is an automated message from the Park Agility Office Key Tracker.
+            This is an automated message from the Park Agility Office Presence Tracker. Please do not reply to this email. The inbox is not monitored.
         </div>
     </div>
 </body>
 </html>
 """
     
-    msg.attach(MIMEText(text_content, "plain"))
-    msg.attach(MIMEText(html_content, "html"))
+    msg.attach(MIMEText(text_content, "plain", "utf-8"))
+    msg.attach(MIMEText(html_content, "html", "utf-8"))
     
     try:
         if email_config.get("use_tls", True):
@@ -106,7 +109,7 @@ This is an automated message from the Park Agility Office Key Tracker.
         return False
 
 
-def send_change_of_plans_email(config, alert_date, key_bearer_name):
+def send_change_of_plans_email(config, alert_date, employee_name):
     """Send email when someone becomes available after all-absent alert was sent."""
     
     email_config = config["email"]
@@ -118,27 +121,31 @@ def send_change_of_plans_email(config, alert_date, key_bearer_name):
     to_emails = [r["email"] for r in recipients]
     
     msg = MIMEMultipart("alternative")
-    msg["Subject"] = f"🔑 Park Agility Office Update - Change of Plans - {formatted_date}"
+    msg["Subject"] = f"Park Agility Office Update - Change of Plans - {formatted_date}"
     msg["From"] = f"{email_config['from_name']} <{email_config['from_email']}>"
     msg["To"] = ", ".join(to_emails)
+    msg["X-Priority"] = "1"
+    msg["X-MSMail-Priority"] = "High"
+    msg["Importance"] = "High"
     
     text_content = f"""
 PARK AGILITY - CHANGE OF PLANS
 
 Date: {formatted_date}
 
-Good news! {key_bearer_name} is now going to be in the office on this date.
+Good news! {employee_name} is now going to be in the office on this date.
 
 The office will be accessible.
 
 ---
-This is an automated message from the Park Agility Office Key Tracker.
+This is an automated message from the Park Agility Office Presence Tracker. Please do not reply to this email. The inbox is not monitored.
 """
     
     html_content = f"""
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
     <style>
         body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }}
         .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
@@ -157,30 +164,30 @@ This is an automated message from the Park Agility Office Key Tracker.
 <body>
     <div class="container">
         <div class="header">
-            <h1>Park Agility Office Key Tracker</h1>
+            <h1>Park Agility Office Presence Tracker</h1>
             <div class="tagline">FASTER.SMARTER.GREENER.</div>
         </div>
         <div class="content">
             <div class="date-box">
-                <h2>✓ {formatted_date}</h2>
+                <h2>{formatted_date}</h2>
                 <p style="margin: 10px 0 0 0; color: #666;">Change of Plans</p>
             </div>
             <div class="good-news">
                 <h3>Good News!</h3>
-                <p><strong>{key_bearer_name}</strong> is now going to be in the office on this date.</p>
+                <p><strong>{employee_name}</strong> is now going to be in the office on this date.</p>
             </div>
-            <p style="text-align: center; color: #666;">The office will be accessible. 🎉</p>
+            <p style="text-align: center; color: #666;">The office will be accessible.</p>
         </div>
         <div class="footer">
-            This is an automated message from the Park Agility Office Key Tracker.
+            This is an automated message from the Park Agility Office Presence Tracker. Please do not reply to this email. The inbox is not monitored.
         </div>
     </div>
 </body>
 </html>
 """
     
-    msg.attach(MIMEText(text_content, "plain"))
-    msg.attach(MIMEText(html_content, "html"))
+    msg.attach(MIMEText(text_content, "plain", "utf-8"))
+    msg.attach(MIMEText(html_content, "html", "utf-8"))
     
     try:
         if email_config.get("use_tls", True):
@@ -193,7 +200,7 @@ This is an automated message from the Park Agility Office Key Tracker.
         server.sendmail(email_config["from_email"], to_emails, msg.as_string())
         server.quit()
         
-        print(f"Change of plans email sent for {alert_date} - {key_bearer_name} now available")
+        print(f"Change of plans email sent for {alert_date} - {employee_name} now available")
         return True
         
     except Exception as e:

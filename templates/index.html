@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Park Agility Office Key Tracker</title>
+    <title>Park Agility Office Presence Tracker</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <style>
         :root {
@@ -22,7 +22,7 @@
             padding: 20px;
         }
 
-        .container { max-width: 600px; margin: 0 auto; }
+        .container { max-width: 700px; margin: 0 auto; }
 
         .card {
             background: white;
@@ -40,7 +40,7 @@
         }
 
         .header-logo { width: 80px; height: auto; margin-bottom: 16px; }
-        .header h1 { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+        .header h1 { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
         .header p { opacity: 0.9; font-size: 14px; color: var(--pa-green); }
 
         .content { padding: 30px; }
@@ -66,6 +66,72 @@
         }
 
         select:focus { outline: none; border-color: var(--pa-dark-blue); }
+
+        /* Has Key Toggle */
+        .key-toggle-section {
+            display: none;
+            background: #f0fdf4;
+            padding: 16px;
+            border-radius: 10px;
+            margin-bottom: 24px;
+            border: 2px solid #bbf7d0;
+        }
+
+        .key-toggle-section.show { display: flex; align-items: center; justify-content: space-between; }
+
+        .key-toggle-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+            color: #166534;
+        }
+
+        .key-icon { font-size: 20px; }
+
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 26px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.3s;
+            border-radius: 26px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background-color: var(--pa-green);
+        }
+
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
 
         /* Usual Absence Pattern */
         .usual-pattern {
@@ -212,7 +278,7 @@
         .scheduled-title { font-weight: 600; color: var(--pa-dark-blue); font-size: 15px; }
         .absence-count { background: var(--pa-dark-blue); color: white; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
 
-        .absence-list { display: flex; flex-direction: column; gap: 8px; }
+        .absence-list { display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto; }
 
         .absence-item {
             display: flex;
@@ -258,11 +324,11 @@
         .day-column {
             background: #f9fafb;
             border-radius: 10px;
-            padding: 12px 8px;
+            padding: 12px 6px;
             text-align: center;
         }
 
-        .day-column.all-absent {
+        .day-column.no-access {
             background: #fee2e2;
             border: 2px solid var(--pa-red);
         }
@@ -270,13 +336,13 @@
         .day-header { font-size: 12px; font-weight: 600; color: var(--pa-dark-blue); }
         .day-date { font-size: 11px; color: #6b7280; margin-top: 2px; }
 
-        .bearer-dots { margin-top: 10px; display: flex; flex-direction: column; gap: 4px; }
+        .employee-dots { margin-top: 10px; display: flex; flex-direction: column; gap: 3px; }
 
-        .bearer-dot {
+        .employee-dot {
             display: flex;
             align-items: center;
-            gap: 6px;
-            font-size: 10px;
+            gap: 4px;
+            font-size: 9px;
             color: #374151;
         }
 
@@ -284,16 +350,25 @@
             width: 8px;
             height: 8px;
             border-radius: 50%;
+            flex-shrink: 0;
         }
 
         .dot.available { background: var(--pa-green); }
         .dot.absent { background: var(--pa-red); }
 
-        .bearer-name {
+        .employee-name-cell {
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            max-width: 60px;
+            max-width: 70px;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .key-badge {
+            font-size: 10px;
+            flex-shrink: 0;
         }
 
         /* Toast */
@@ -310,6 +385,8 @@
             opacity: 0;
             transition: all 0.3s;
             z-index: 1000;
+            max-width: 90%;
+            text-align: center;
         }
 
         .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
@@ -362,6 +439,27 @@
         .modal-btn.cancel:hover { background: #d1d5db; }
         .modal-btn.confirm { background: var(--pa-green); color: white; }
         .modal-btn.confirm:hover { background: #2fa87a; }
+
+        /* No Access Warning */
+        .no-access-legend {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 16px;
+            padding: 12px;
+            background: #fef2f2;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #991b1b;
+        }
+
+        .legend-box {
+            width: 16px;
+            height: 16px;
+            background: #fee2e2;
+            border: 2px solid var(--pa-red);
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
@@ -369,18 +467,30 @@
         <div class="card">
             <div class="header">
                 <img src="{{ url_for('static', filename='logo.png') }}" alt="Park Agility" class="header-logo">
-                <h1>Office Key Tracker</h1>
+                <h1>Office Presence Tracker</h1>
                 <p>FASTER.SMARTER.GREENER.</p>
             </div>
             <div class="content">
                 <div class="form-group">
                     <label>Who are you?</label>
-                    <select id="keyBearer">
+                    <select id="employeeSelect">
                         <option value="">Select your name...</option>
-                        {% for kb in key_bearers %}
-                        <option value="{{ kb.name }}">{{ kb.name }}</option>
+                        {% for emp in employees %}
+                        <option value="{{ emp.name }}" data-has-key="{{ emp.has_key|lower }}">{{ emp.name }}</option>
                         {% endfor %}
                     </select>
+                </div>
+
+                <!-- Has Key Toggle -->
+                <div class="key-toggle-section" id="keyToggleSection">
+                    <div class="key-toggle-label">
+                        <span class="key-icon">🔑</span>
+                        <span>Has Office Key?</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="hasKeyToggle">
+                        <span class="toggle-slider"></span>
+                    </label>
                 </div>
 
                 <!-- Usual Absence Pattern -->
@@ -441,6 +551,10 @@
             <div class="content">
                 <label>🗓️ Two Week Overview</label>
                 <div id="weeklyStatus"></div>
+                <div class="no-access-legend">
+                    <div class="legend-box"></div>
+                    <span>Red highlight = No key bearers available (no office access)</span>
+                </div>
             </div>
         </div>
     </div>
@@ -462,10 +576,15 @@
 
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>
-        const keyBearerSelect = document.getElementById('keyBearer');
+        // Sydney today date passed from server
+        const sydneyToday = "{{ sydney_today }}";
+        
+        const employeeSelect = document.getElementById('employeeSelect');
         const datePicker = document.getElementById('datePicker');
         const submitBtn = document.getElementById('submitBtn');
         const quickBtns = document.querySelectorAll('.quick-btn');
+        const keyToggleSection = document.getElementById('keyToggleSection');
+        const hasKeyToggle = document.getElementById('hasKeyToggle');
         const usualPattern = document.getElementById('usualPattern');
         const weekdayBoxes = document.getElementById('weekdayBoxes');
         const scheduledAbsences = document.getElementById('scheduledAbsences');
@@ -477,16 +596,20 @@
         let selectedDates = [];
         let usualAbsences = {};
         let pendingAction = null;
+        let currentEmployeeHasKey = false;
         let fp;
 
-        // Initialize Flatpickr
+        // Initialize Flatpickr with Sydney timezone date
         fp = flatpickr(datePicker, {
             mode: 'multiple',
             dateFormat: 'Y-m-d',
-            minDate: 'today',
+            minDate: sydneyToday,
             onChange: function(dates) {
                 selectedDates = dates.map(d => formatDate(d));
-                quickBtns.forEach(btn => btn.classList.remove('active'));
+                // Only remove active class if user actually picked dates from calendar
+                if (dates.length > 0) {
+                    quickBtns.forEach(btn => btn.classList.remove('active'));
+                }
                 updateSubmitBtn();
             }
         });
@@ -499,7 +622,10 @@
         });
 
         function formatDate(date) {
-            return date.toISOString().split('T')[0];
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
         }
 
         function formatDateDisplay(dateStr) {
@@ -509,12 +635,15 @@
             return { day, full };
         }
 
-        function getToday() { return formatDate(new Date()); }
+        // Use Sydney date for "today" calculations
+        function getToday() { 
+            return sydneyToday; 
+        }
 
         function getTomorrow() {
-            const tomorrow = new Date();
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            return formatDate(tomorrow);
+            const today = new Date(sydneyToday + 'T00:00:00');
+            today.setDate(today.getDate() + 1);
+            return formatDate(today);
         }
 
         quickBtns.forEach(btn => {
@@ -522,34 +651,82 @@
                 quickBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 fp.clear();
-                selectedDates = btn.dataset.quick === 'today' ? [getToday()] : [getTomorrow()];
-                updateSubmitBtn();
+                // Use setTimeout to set dates AFTER flatpickr's onChange completes
+                setTimeout(() => {
+                    selectedDates = btn.dataset.quick === 'today' ? [getToday()] : [getTomorrow()];
+                    updateSubmitBtn();
+                }, 0);
             });
         });
 
         function updateSubmitBtn() {
-            submitBtn.disabled = !(keyBearerSelect.value && selectedDates.length > 0);
+            submitBtn.disabled = !(employeeSelect.value && selectedDates.length > 0);
         }
 
-        keyBearerSelect.addEventListener('change', () => {
+        employeeSelect.addEventListener('change', () => {
             updateSubmitBtn();
-            if (keyBearerSelect.value) {
+            const selectedOption = employeeSelect.options[employeeSelect.selectedIndex];
+            
+            if (employeeSelect.value) {
+                currentEmployeeHasKey = selectedOption.dataset.hasKey === 'true';
+                hasKeyToggle.checked = currentEmployeeHasKey;
+                
+                keyToggleSection.classList.add('show');
                 usualPattern.classList.add('show');
                 loadUsualAbsences();
                 loadMyAbsences();
             } else {
+                keyToggleSection.classList.remove('show');
                 usualPattern.classList.remove('show');
                 scheduledAbsences.classList.remove('show');
             }
         });
 
+        // Has Key Toggle
+        hasKeyToggle.addEventListener('change', () => {
+            const newStatus = hasKeyToggle.checked;
+            const employeeName = employeeSelect.value;
+            
+            // Revert the toggle until confirmed
+            hasKeyToggle.checked = currentEmployeeHasKey;
+            
+            const message = newStatus 
+                ? "Do you now have permanent possession of the office key? Proceed to update?"
+                : "You don't have office keys anymore. Proceed to update?";
+            
+            showModal(
+                '🔑',
+                'Update Key Status',
+                message,
+                async () => {
+                    const res = await fetch(`/api/employees/${encodeURIComponent(employeeName)}/toggle-key`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ has_key: newStatus })
+                    });
+                    
+                    if (res.ok) {
+                        currentEmployeeHasKey = newStatus;
+                        hasKeyToggle.checked = newStatus;
+                        
+                        // Update the data attribute
+                        const selectedOption = employeeSelect.options[employeeSelect.selectedIndex];
+                        selectedOption.dataset.hasKey = newStatus.toString();
+                        
+                        showToast(newStatus ? 'You now have office key access!' : 'Key status updated', 'success');
+                        loadWeeklyStatus();
+                    }
+                }
+            );
+        });
+
         // Load usual absence pattern
         async function loadUsualAbsences() {
-            const bearer = keyBearerSelect.value;
-            if (!bearer) return;
+            const employee = employeeSelect.value;
+            if (!employee) return;
 
             try {
-                const res = await fetch(`/api/usual-absences/${encodeURIComponent(bearer)}`);
+                const res = await fetch(`/api/usual-absences/${encodeURIComponent(employee)}`);
                 usualAbsences = await res.json();
                 updateWeekdayBoxes();
             } catch (err) {
@@ -578,23 +755,81 @@
         weekdayBoxes.querySelectorAll('.weekday-box').forEach(box => {
             box.addEventListener('click', async () => {
                 const day = box.dataset.day;
-                usualAbsences[day] = !usualAbsences[day];
-                updateWeekdayBoxes();
+                const newValue = !usualAbsences[day];
                 
-                await saveUsualAbsences();
+                // If marking as ABSENT and user has key, check if it triggers "no access" email
+                if (newValue && currentEmployeeHasKey) {
+                    const checkRes = await fetch('/api/check-usual-absence-impact', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ employee_name: employeeSelect.value, day: day })
+                    });
+                    const checkData = await checkRes.json();
+                    
+                    if (checkData.will_trigger_email && checkData.trigger_dates.length > 0) {
+                        const datesStr = checkData.trigger_dates.map(d => formatDateDisplay(d).full).join(', ');
+                        showModal(
+                            '📧',
+                            'Email Alert Will Be Sent',
+                            `Marking ${day.charAt(0).toUpperCase() + day.slice(1)} as your usual day off will send an email for: ${datesStr}. Proceed?`,
+                            async () => {
+                                usualAbsences[day] = newValue;
+                                updateWeekdayBoxes();
+                                await saveUsualAbsences(true);
+                                showToast('Usual weekly pattern updated. Update again if this changes.', 'warning');
+                                loadWeeklyStatus();
+                                loadMyAbsences();
+                            }
+                        );
+                        return;
+                    }
+                }
+                
+                // If marking as PRESENT and user has key, check if it triggers "change of plans" email
+                if (!newValue && currentEmployeeHasKey) {
+                    const checkRes = await fetch('/api/check-usual-presence-impact', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ employee_name: employeeSelect.value, day: day })
+                    });
+                    const checkData = await checkRes.json();
+                    
+                    if (checkData.will_trigger_email && checkData.trigger_dates.length > 0) {
+                        const datesStr = checkData.trigger_dates.map(d => formatDateDisplay(d).full).join(', ');
+                        showModal(
+                            '📧',
+                            'Change of Plans Email Will Be Sent',
+                            `Marking ${day.charAt(0).toUpperCase() + day.slice(1)} as your usual day in office will notify that you're now available on: ${datesStr}. Proceed?`,
+                            async () => {
+                                usualAbsences[day] = newValue;
+                                updateWeekdayBoxes();
+                                await saveUsualAbsences(true);
+                                showToast('Usual weekly pattern updated. Update again if this changes.', 'warning');
+                                loadWeeklyStatus();
+                                loadMyAbsences();
+                            }
+                        );
+                        return;
+                    }
+                }
+                
+                usualAbsences[day] = newValue;
+                updateWeekdayBoxes();
+                await saveUsualAbsences(false);
                 showToast('Usual weekly pattern updated. Update again if this changes.', 'warning');
                 loadWeeklyStatus();
                 loadMyAbsences();
             });
         });
 
-        async function saveUsualAbsences() {
-            const bearer = keyBearerSelect.value;
+        async function saveUsualAbsences(confirmed = false) {
+            const employee = employeeSelect.value;
             await fetch('/api/usual-absences', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    key_bearer: bearer,
+                    employee_name: employee,
+                    confirmed: confirmed,
                     ...usualAbsences
                 })
             });
@@ -602,14 +837,14 @@
 
         // Load scheduled absences
         async function loadMyAbsences() {
-            const bearer = keyBearerSelect.value;
-            if (!bearer) {
+            const employee = employeeSelect.value;
+            if (!employee) {
                 scheduledAbsences.classList.remove('show');
                 return;
             }
 
             try {
-                const res = await fetch(`/api/my-absences/${encodeURIComponent(bearer)}`);
+                const res = await fetch(`/api/my-absences/${encodeURIComponent(employee)}`);
                 const absences = await res.json();
 
                 if (absences.length > 0) {
@@ -637,13 +872,12 @@
 
         // Remove absence with confirmation
         async function removeAbsence(date) {
-            const bearer = keyBearerSelect.value;
+            const employee = employeeSelect.value;
             
-            // Check if this will trigger email
             const checkRes = await fetch('/api/check-removal-impact', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ key_bearer: bearer, dates: [date] })
+                body: JSON.stringify({ employee_name: employee, dates: [date] })
             });
             const checkData = await checkRes.json();
 
@@ -653,19 +887,19 @@
                     'Email Alert Will Be Sent',
                     `Removing your absence will notify the Sydney office that you are now coming on ${formatDateDisplay(date).full}. Do you want to proceed?`,
                     async () => {
-                        await doRemoveAbsence(bearer, date, true);
+                        await doRemoveAbsence(employee, date, true);
                     }
                 );
             } else {
-                await doRemoveAbsence(bearer, date, false);
+                await doRemoveAbsence(employee, date, false);
             }
         }
 
-        async function doRemoveAbsence(bearer, date, confirmed) {
+        async function doRemoveAbsence(employee, date, confirmed) {
             const res = await fetch('/api/cancel-absence', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ key_bearer: bearer, dates: [date], confirmed })
+                body: JSON.stringify({ employee_name: employee, dates: [date], confirmed })
             });
 
             if (res.ok) {
@@ -682,14 +916,13 @@
 
         // Submit absence with confirmation
         submitBtn.addEventListener('click', async () => {
-            const bearer = keyBearerSelect.value;
-            if (!bearer || selectedDates.length === 0) return;
+            const employee = employeeSelect.value;
+            if (!employee || selectedDates.length === 0) return;
 
-            // Check if this will trigger email
             const checkRes = await fetch('/api/check-absence-impact', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ key_bearer: bearer, dates: selectedDates })
+                body: JSON.stringify({ employee_name: employee, dates: selectedDates })
             });
             const checkData = await checkRes.json();
 
@@ -709,7 +942,7 @@
         });
 
         async function doMarkAbsent(confirmed) {
-            const bearer = keyBearerSelect.value;
+            const employee = employeeSelect.value;
             submitBtn.disabled = true;
             submitBtn.textContent = 'Saving...';
 
@@ -718,7 +951,7 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        key_bearer: bearer,
+                        employee_name: employee,
                         dates: selectedDates,
                         confirmed
                     })
@@ -761,14 +994,16 @@
                             <div class="week-label">${week.label}</div>
                             <div class="week-grid">
                                 ${week.days.map(day => `
-                                    <div class="day-column ${day.all_absent ? 'all-absent' : ''}">
+                                    <div class="day-column ${day.all_key_bearers_absent ? 'no-access' : ''}">
                                         <div class="day-header">${day.day_name}</div>
                                         <div class="day-date">${day.month} ${day.day_num}</div>
-                                        <div class="bearer-dots">
-                                            ${day.bearers.map(b => `
-                                                <div class="bearer-dot">
-                                                    <div class="dot ${b.absent ? 'absent' : 'available'}"></div>
-                                                    <span class="bearer-name" title="${b.name}">${b.name.split(' ')[0]}</span>
+                                        <div class="employee-dots">
+                                            ${day.employees.map(emp => `
+                                                <div class="employee-dot">
+                                                    <div class="dot ${emp.absent ? 'absent' : 'available'}"></div>
+                                                    <span class="employee-name-cell" title="${emp.name}">
+                                                        ${emp.name.split(' ')[0]}${emp.has_key ? '<span class="key-badge">🔑</span>' : ''}
+                                                    </span>
                                                 </div>
                                             `).join('')}
                                         </div>

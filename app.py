@@ -4,6 +4,7 @@ import os
 from datetime import datetime, date, timedelta
 from supabase import create_client, Client
 from email_service import send_alert_email, send_change_of_plans_email
+import pytz
 
 # Load .env file for local development
 try:
@@ -21,6 +22,19 @@ supabase: Client = create_client(
     os.environ.get("SUPABASE_URL", ""),
     os.environ.get("SUPABASE_KEY", "")
 )
+
+def get_sydney_timezone():
+    """Get current Sydney timezone (handles DST automatically)."""
+    return pytz.timezone('Australia/Sydney')
+
+def get_sydney_now():
+    """Get current datetime in Sydney timezone."""
+    sydney_tz = get_sydney_timezone()
+    return datetime.now(sydney_tz)
+
+def get_sydney_today():
+    """Get today's date in Sydney timezone."""
+    return get_sydney_now().date()
 
 def load_config():
     """Load config from JSON file, override email settings with env vars if present."""
@@ -42,6 +56,16 @@ def load_config():
     
     return config
 
+def get_key_bearers():
+    """Get all employees who have office keys."""
+    result = supabase.table("employees").select("*").eq("has_key", True).execute()
+    return result.data if result.data else []
+
+def get_all_employees():
+    """Get all employees."""
+    result = supabase.table("employees").select("*").order("name").execute()
+    return result.data if result.data else []
+
 def get_weekday_name(d):
     """Get lowercase weekday name from date."""
     return d.strftime("%A").lower()
@@ -53,14 +77,14 @@ def get_week_dates(start_date):
 
 def get_two_week_dates():
     """Get dates for current week and next week (Mon-Fri each)."""
-    today = date.today()
+    today = get_sydney_today()
     current_week = get_week_dates(today)
     next_week = get_week_dates(today + timedelta(days=7))
     return current_week + next_week
 
 def run_monthly_sync():
     """Run monthly sync operations - populate next month on 25th, cleanup last month on 5th."""
-    today = date.today()
+    today = get_sydney_today()
     current_month = today.month
     current_year = today.year
     
@@ -107,14 +131,14 @@ def populate_month_absences(year, month):
             for pattern in usual.data:
                 if pattern.get(weekday, False):
                     entries.append({
-                        "key_bearer": pattern["key_bearer"],
+                        "employee_name": pattern["employee_name"],
                         "absence_date": current.isoformat()
                     })
         current += timedelta(days=1)
     
     for entry in entries:
         try:
-            supabase.table("absences").upsert(entry, on_conflict="key_bearer,absence_date").execute()
+            supabase.table("absences").upsert(entry, on_conflict="employee_name,absence_date").execute()
         except:
             pass
 
@@ -128,56 +152,91 @@ def cleanup_month_absences(year, month):
     
     supabase.table("absences").delete().gte("absence_date", first_day.isoformat()).lte("absence_date", last_day.isoformat()).execute()
 
+def can_send_new_alert(target_date):
+    """Check if we can send a new alert for this date.
+    Returns True if:
+    - No email_log entry exists, OR
+    - Email_log entry exists AND followup_sent=True (someone became available, so cycle reset)
+    """
+    existing = supabase.table("email_log").select("*").eq("alert_date", target_date).execute()
+    
+    if not existing.data:
+        return True
+    
+    # If followup was sent, we can send a new alert
+    return existing.data[0].get("followup_sent", False)
+
 def check_and_send_alert(target_date):
     """Check if all key bearers are absent and send alert if needed."""
     config = load_config()
-    key_bearers = config["key_bearers"]
+    key_bearers = get_key_bearers()
     
-    existing = supabase.table("email_log").select("id").eq("alert_date", target_date).execute()
+    if not key_bearers:
+        return {"sent": False, "reason": "no_key_bearers"}
     
-    if existing.data:
+    # Check if we can send a new alert
+    if not can_send_new_alert(target_date):
         return {"sent": False, "reason": "already_sent"}
     
-    absences = supabase.table("absences").select("key_bearer").eq("absence_date", target_date).execute()
+    absences = supabase.table("absences").select("employee_name").eq("absence_date", target_date).execute()
     
-    absent_names = {row["key_bearer"] for row in absences.data}
+    absent_names = {row["employee_name"] for row in absences.data}
     all_bearer_names = {kb["name"] for kb in key_bearers}
     
     if absent_names >= all_bearer_names:
         success = send_alert_email(config, target_date, key_bearers)
         
         if success:
+            # Delete old entry if exists, then insert fresh one
+            supabase.table("email_log").delete().eq("alert_date", target_date).execute()
             supabase.table("email_log").insert({"alert_date": target_date, "followup_sent": False}).execute()
             return {"sent": True, "reason": "all_absent"}
         else:
             return {"sent": False, "reason": "email_failed"}
     
-    return {"sent": False, "reason": "not_all_absent", "absent": len(absent_names), "total": len(all_bearer_names)}
+    return {"sent": False, "reason": "not_all_absent", "absent": len(absent_names & all_bearer_names), "total": len(all_bearer_names)}
 
 @app.route("/")
 def index():
     run_monthly_sync()
-    config = load_config()
-    return render_template("index.html", key_bearers=config["key_bearers"])
+    employees = get_all_employees()
+    sydney_today = get_sydney_today().isoformat()
+    return render_template("index.html", employees=employees, sydney_today=sydney_today)
+
+@app.route("/api/employees")
+def api_get_employees():
+    """Get all employees."""
+    employees = get_all_employees()
+    return jsonify(employees)
+
+@app.route("/api/employees/<employee_name>/toggle-key", methods=["POST"])
+def toggle_key_status(employee_name):
+    """Toggle has_key status for an employee."""
+    data = request.json
+    new_status = data.get("has_key", False)
+    
+    supabase.table("employees").update({"has_key": new_status}).eq("name", employee_name).execute()
+    
+    return jsonify({"success": True, "has_key": new_status})
 
 @app.route("/api/mark-absent", methods=["POST"])
 def mark_absent():
     data = request.json
-    key_bearer = data.get("key_bearer")
+    employee_name = data.get("employee_name")
     dates = data.get("dates", [])
     confirmed = data.get("confirmed", False)
     
-    if not key_bearer or not dates:
-        return jsonify({"error": "Missing key_bearer or dates"}), 400
+    if not employee_name or not dates:
+        return jsonify({"error": "Missing employee_name or dates"}), 400
     
     alerts_sent = []
     
     for d in dates:
         try:
             supabase.table("absences").upsert({
-                "key_bearer": key_bearer,
+                "employee_name": employee_name,
                 "absence_date": d
-            }, on_conflict="key_bearer,absence_date").execute()
+            }, on_conflict="employee_name,absence_date").execute()
             
             if confirmed:
                 alert_result = check_and_send_alert(d)
@@ -196,23 +255,27 @@ def mark_absent():
 def check_absence_impact():
     """Check if marking these absences would trigger an email alert."""
     data = request.json
-    key_bearer = data.get("key_bearer")
+    employee_name = data.get("employee_name")
     dates = data.get("dates", [])
     
-    config = load_config()
-    key_bearers = config["key_bearers"]
+    # Check if this employee has a key
+    employee = supabase.table("employees").select("has_key").eq("name", employee_name).execute()
+    if not employee.data or not employee.data[0].get("has_key"):
+        return jsonify({"will_trigger_email": False, "trigger_dates": []})
+    
+    key_bearers = get_key_bearers()
     all_bearer_names = {kb["name"] for kb in key_bearers}
     
     will_trigger = []
     
     for d in dates:
-        existing = supabase.table("email_log").select("id").eq("alert_date", d).execute()
-        if existing.data:
+        # Check if we can send a new alert for this date
+        if not can_send_new_alert(d):
             continue
         
-        absences = supabase.table("absences").select("key_bearer").eq("absence_date", d).execute()
-        absent_names = {row["key_bearer"] for row in absences.data}
-        absent_names.add(key_bearer)
+        absences = supabase.table("absences").select("employee_name").eq("absence_date", d).execute()
+        absent_names = {row["employee_name"] for row in absences.data}
+        absent_names.add(employee_name)
         
         if absent_names >= all_bearer_names:
             will_trigger.append(d)
@@ -226,12 +289,18 @@ def check_absence_impact():
 def check_removal_impact():
     """Check if removing absences would trigger a 'change of plans' email."""
     data = request.json
-    key_bearer = data.get("key_bearer")
+    employee_name = data.get("employee_name")
     dates = data.get("dates", [])
+    
+    # Check if this employee has a key
+    employee = supabase.table("employees").select("has_key").eq("name", employee_name).execute()
+    if not employee.data or not employee.data[0].get("has_key"):
+        return jsonify({"will_trigger_email": False, "trigger_dates": []})
     
     will_trigger = []
     
     for d in dates:
+        # Check if an alert was sent AND followup not yet sent
         log_entry = supabase.table("email_log").select("*").eq("alert_date", d).execute()
         
         if log_entry.data and not log_entry.data[0].get("followup_sent", False):
@@ -242,33 +311,119 @@ def check_removal_impact():
         "trigger_dates": will_trigger
     })
 
+@app.route("/api/check-usual-absence-impact", methods=["POST"])
+def check_usual_absence_impact():
+    """Check if updating usual absence pattern would trigger email alerts."""
+    data = request.json
+    employee_name = data.get("employee_name")
+    day = data.get("day")  # e.g., 'monday'
+    
+    # Check if this employee has a key
+    employee = supabase.table("employees").select("has_key").eq("name", employee_name).execute()
+    if not employee.data or not employee.data[0].get("has_key"):
+        return jsonify({"will_trigger_email": False, "trigger_dates": []})
+    
+    key_bearers = get_key_bearers()
+    all_bearer_names = {kb["name"] for kb in key_bearers}
+    
+    # Get all dates for this weekday from today to end of month
+    today = get_sydney_today()
+    if today.month == 12:
+        last_day = date(today.year + 1, 1, 1) - timedelta(days=1)
+    else:
+        last_day = date(today.year, today.month + 1, 1) - timedelta(days=1)
+    
+    will_trigger = []
+    current = today
+    while current <= last_day:
+        if get_weekday_name(current) == day:
+            d_str = current.isoformat()
+            
+            # Check if we can send a new alert
+            if not can_send_new_alert(d_str):
+                current += timedelta(days=1)
+                continue
+            
+            # Get current absences
+            absences = supabase.table("absences").select("employee_name").eq("absence_date", d_str).execute()
+            absent_names = {row["employee_name"] for row in absences.data}
+            absent_names.add(employee_name)
+            
+            if absent_names >= all_bearer_names:
+                will_trigger.append(d_str)
+        
+        current += timedelta(days=1)
+    
+    return jsonify({
+        "will_trigger_email": len(will_trigger) > 0,
+        "trigger_dates": will_trigger
+    })
+    
+@app.route("/api/check-usual-presence-impact", methods=["POST"])
+def check_usual_presence_impact():
+    """Check if marking a day as 'present' would trigger change of plans emails."""
+    data = request.json
+    employee_name = data.get("employee_name")
+    day = data.get("day")  # e.g., 'monday'
+    
+    # Check if this employee has a key
+    employee = supabase.table("employees").select("has_key").eq("name", employee_name).execute()
+    if not employee.data or not employee.data[0].get("has_key"):
+        return jsonify({"will_trigger_email": False, "trigger_dates": []})
+    
+    # Get all dates for this weekday from tomorrow to end of month
+    today = get_sydney_today()
+    tomorrow = today + timedelta(days=1)
+    if today.month == 12:
+        last_day = date(today.year + 1, 1, 1) - timedelta(days=1)
+    else:
+        last_day = date(today.year, today.month + 1, 1) - timedelta(days=1)
+    
+    will_trigger = []
+    current = tomorrow
+    while current <= last_day:
+        if get_weekday_name(current) == day:
+            d_str = current.isoformat()
+            
+            # Check if an alert was sent AND followup not yet sent
+            log_entry = supabase.table("email_log").select("*").eq("alert_date", d_str).execute()
+            if log_entry.data and not log_entry.data[0].get("followup_sent", False):
+                will_trigger.append(d_str)
+        
+        current += timedelta(days=1)
+    
+    return jsonify({
+        "will_trigger_email": len(will_trigger) > 0,
+        "trigger_dates": will_trigger
+    })
+
 @app.route("/api/absences")
 def get_absences():
     """Get all absences for calendar display."""
-    today = date.today().isoformat()
-    result = supabase.table("absences").select("key_bearer, absence_date").gte("absence_date", today).execute()
+    today = get_sydney_today().isoformat()
+    result = supabase.table("absences").select("employee_name, absence_date").gte("absence_date", today).execute()
     
     absences = {}
     for row in result.data:
         d = row["absence_date"]
         if d not in absences:
             absences[d] = []
-        absences[d].append(row["key_bearer"])
+        absences[d].append(row["employee_name"])
     
     return jsonify(absences)
 
-@app.route("/api/my-absences/<key_bearer>")
-def get_my_absences(key_bearer):
-    """Get absences for a specific key bearer."""
-    today = date.today().isoformat()
-    result = supabase.table("absences").select("absence_date").eq("key_bearer", key_bearer).gte("absence_date", today).order("absence_date").execute()
+@app.route("/api/my-absences/<employee_name>")
+def get_my_absences(employee_name):
+    """Get absences for a specific employee."""
+    today = get_sydney_today().isoformat()
+    result = supabase.table("absences").select("absence_date").eq("employee_name", employee_name).gte("absence_date", today).order("absence_date").execute()
     
     return jsonify([row["absence_date"] for row in result.data])
 
 @app.route("/api/cancel-absence", methods=["POST"])
 def cancel_absence():
     data = request.json
-    key_bearer = data.get("key_bearer")
+    employee_name = data.get("employee_name")
     dates = data.get("dates", [])
     confirmed = data.get("confirmed", False)
     
@@ -276,24 +431,27 @@ def cancel_absence():
     followup_sent_for = []
     
     for d in dates:
-        supabase.table("absences").delete().eq("key_bearer", key_bearer).eq("absence_date", d).execute()
+        # Delete the absence first
+        supabase.table("absences").delete().eq("employee_name", employee_name).eq("absence_date", d).execute()
         
         if confirmed:
+            # Check if we need to send "change of plans" email
             log_entry = supabase.table("email_log").select("*").eq("alert_date", d).execute()
             
             if log_entry.data and not log_entry.data[0].get("followup_sent", False):
-                success = send_change_of_plans_email(config, d, key_bearer)
+                success = send_change_of_plans_email(config, d, employee_name)
                 
                 if success:
+                    # Mark followup as sent - this allows a new alert to be sent if all become absent again
                     supabase.table("email_log").update({"followup_sent": True}).eq("alert_date", d).execute()
                     followup_sent_for.append(d)
     
     return jsonify({"success": True, "dates_cancelled": dates, "followup_emails_sent": followup_sent_for})
 
-@app.route("/api/usual-absences/<key_bearer>")
-def get_usual_absences(key_bearer):
-    """Get usual absence pattern for a key bearer."""
-    result = supabase.table("usual_absences").select("*").eq("key_bearer", key_bearer).execute()
+@app.route("/api/usual-absences/<employee_name>")
+def get_usual_absences(employee_name):
+    """Get usual absence pattern for an employee."""
+    result = supabase.table("usual_absences").select("*").eq("employee_name", employee_name).execute()
     
     if result.data:
         pattern = result.data[0]
@@ -315,11 +473,12 @@ def get_usual_absences(key_bearer):
 
 @app.route("/api/usual-absences", methods=["POST"])
 def update_usual_absences():
-    """Update usual absence pattern for a key bearer."""
+    """Update usual absence pattern for an employee."""
     data = request.json
-    key_bearer = data.get("key_bearer")
+    employee_name = data.get("employee_name")
+    confirmed = data.get("confirmed", False)
     pattern = {
-        "key_bearer": key_bearer,
+        "employee_name": employee_name,
         "monday": data.get("monday", False),
         "tuesday": data.get("tuesday", False),
         "wednesday": data.get("wednesday", False),
@@ -327,49 +486,84 @@ def update_usual_absences():
         "friday": data.get("friday", False)
     }
     
-    supabase.table("usual_absences").upsert(pattern, on_conflict="key_bearer").execute()
+    supabase.table("usual_absences").upsert(pattern, on_conflict="employee_name").execute()
     
-    # Update remaining days of current month
-    today = date.today()
+    # Update from TOMORROW to end of current month
+    today = get_sydney_today()
+    tomorrow = today + timedelta(days=1)
     if today.month == 12:
         last_day = date(today.year + 1, 1, 1) - timedelta(days=1)
     else:
         last_day = date(today.year, today.month + 1, 1) - timedelta(days=1)
     
-    current = today
+    config = load_config()
+    alerts_sent = []
+    followup_sent = []
+    
+    current = tomorrow
     while current <= last_day:
         weekday = get_weekday_name(current)
         if weekday in ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']:
+            d_str = current.isoformat()
+            
             if pattern.get(weekday, False):
+                # Day marked as ABSENT - add absence
                 try:
                     supabase.table("absences").upsert({
-                        "key_bearer": key_bearer,
-                        "absence_date": current.isoformat()
-                    }, on_conflict="key_bearer,absence_date").execute()
+                        "employee_name": employee_name,
+                        "absence_date": d_str
+                    }, on_conflict="employee_name,absence_date").execute()
+                    
+                    # Check if this triggers an email alert
+                    if confirmed:
+                        alert_result = check_and_send_alert(d_str)
+                        if alert_result["sent"]:
+                            alerts_sent.append(d_str)
                 except:
                     pass
+            else:
+                # Day marked as PRESENT - remove absence if exists
+                try:
+                    supabase.table("absences").delete().eq("employee_name", employee_name).eq("absence_date", d_str).execute()
+                    
+                    # Check if this triggers a "change of plans" email
+                    if confirmed:
+                        log_entry = supabase.table("email_log").select("*").eq("alert_date", d_str).execute()
+                        if log_entry.data and not log_entry.data[0].get("followup_sent", False):
+                            success = send_change_of_plans_email(config, d_str, employee_name)
+                            if success:
+                                supabase.table("email_log").update({"followup_sent": True}).eq("alert_date", d_str).execute()
+                                followup_sent.append(d_str)
+                except:
+                    pass
+        
         current += timedelta(days=1)
     
-    return jsonify({"success": True, "message": "Usual absence pattern updated"})
+    return jsonify({
+        "success": True, 
+        "message": "Usual absence pattern updated", 
+        "alerts_sent": alerts_sent,
+        "followup_sent": followup_sent
+    })
 
 @app.route("/api/weekly-status")
 def get_weekly_status():
-    """Get 2-week status for all key bearers."""
-    config = load_config()
-    key_bearers = config["key_bearers"]
-    all_bearer_names = [kb["name"] for kb in key_bearers]
+    """Get 2-week status for all employees."""
+    employees = get_all_employees()
+    key_bearers = get_key_bearers()
+    key_bearer_names = {kb["name"] for kb in key_bearers}
     
     dates = get_two_week_dates()
     date_strs = [d.isoformat() for d in dates]
     
-    result = supabase.table("absences").select("key_bearer, absence_date").in_("absence_date", date_strs).execute()
+    result = supabase.table("absences").select("employee_name, absence_date").in_("absence_date", date_strs).execute()
     
     absence_map = {}
     for row in result.data:
         d = row["absence_date"]
         if d not in absence_map:
             absence_map[d] = set()
-        absence_map[d].add(row["key_bearer"])
+        absence_map[d].add(row["employee_name"])
     
     weeks = []
     
@@ -379,16 +573,25 @@ def get_weekly_status():
     for d in current_week_dates:
         d_str = d.isoformat()
         absent = absence_map.get(d_str, set())
+        
+        # Check if all KEY BEARERS are absent
+        absent_key_bearers = absent & key_bearer_names
+        all_key_bearers_absent = len(key_bearer_names) > 0 and absent_key_bearers >= key_bearer_names
+        
         day_data = {
             "date": d_str,
             "day_name": d.strftime("%a"),
             "day_num": d.day,
             "month": d.strftime("%b"),
-            "bearers": [],
-            "all_absent": len(absent) >= len(all_bearer_names)
+            "employees": [],
+            "all_key_bearers_absent": all_key_bearers_absent
         }
-        for name in all_bearer_names:
-            day_data["bearers"].append({"name": name, "absent": name in absent})
+        for emp in employees:
+            day_data["employees"].append({
+                "name": emp["name"],
+                "has_key": emp.get("has_key", False),
+                "absent": emp["name"] in absent
+            })
         current_week["days"].append(day_data)
     weeks.append(current_week)
     
@@ -398,42 +601,68 @@ def get_weekly_status():
     for d in next_week_dates:
         d_str = d.isoformat()
         absent = absence_map.get(d_str, set())
+        
+        absent_key_bearers = absent & key_bearer_names
+        all_key_bearers_absent = len(key_bearer_names) > 0 and absent_key_bearers >= key_bearer_names
+        
         day_data = {
             "date": d_str,
             "day_name": d.strftime("%a"),
             "day_num": d.day,
             "month": d.strftime("%b"),
-            "bearers": [],
-            "all_absent": len(absent) >= len(all_bearer_names)
+            "employees": [],
+            "all_key_bearers_absent": all_key_bearers_absent
         }
-        for name in all_bearer_names:
-            day_data["bearers"].append({"name": name, "absent": name in absent})
+        for emp in employees:
+            day_data["employees"].append({
+                "name": emp["name"],
+                "has_key": emp.get("has_key", False),
+                "absent": emp["name"] in absent
+            })
         next_week["days"].append(day_data)
     weeks.append(next_week)
     
-    return jsonify({"weeks": weeks, "key_bearers": all_bearer_names})
+    return jsonify({"weeks": weeks, "employees": [{"name": e["name"], "has_key": e.get("has_key", False)} for e in employees]})
 
 @app.route("/api/status/<date_str>")
 def get_status(date_str):
     """Get status for a specific date."""
-    config = load_config()
-    key_bearers = config["key_bearers"]
+    employees = get_all_employees()
+    key_bearers = get_key_bearers()
+    key_bearer_names = {kb["name"] for kb in key_bearers}
     
-    result = supabase.table("absences").select("key_bearer").eq("absence_date", date_str).execute()
-    absent_names = {row["key_bearer"] for row in result.data}
+    result = supabase.table("absences").select("employee_name").eq("absence_date", date_str).execute()
+    absent_names = {row["employee_name"] for row in result.data}
     
     status = []
-    for kb in key_bearers:
-        status.append({"name": kb["name"], "absent": kb["name"] in absent_names})
+    for emp in employees:
+        status.append({
+            "name": emp["name"],
+            "has_key": emp.get("has_key", False),
+            "absent": emp["name"] in absent_names
+        })
     
-    all_absent = len(absent_names) >= len(key_bearers)
+    absent_key_bearers = absent_names & key_bearer_names
+    all_key_bearers_absent = len(key_bearer_names) > 0 and absent_key_bearers >= key_bearer_names
     
     return jsonify({
         "date": date_str,
-        "key_bearers": status,
-        "all_absent": all_absent,
-        "absent_count": len(absent_names),
-        "total_count": len(key_bearers)
+        "employees": status,
+        "all_key_bearers_absent": all_key_bearers_absent,
+        "absent_key_bearer_count": len(absent_key_bearers),
+        "total_key_bearer_count": len(key_bearer_names)
+    })
+
+@app.route("/api/sydney-time")
+def get_sydney_time():
+    """Get current Sydney time."""
+    sydney_now = get_sydney_now()
+    return jsonify({
+        "datetime": sydney_now.isoformat(),
+        "date": sydney_now.date().isoformat(),
+        "time": sydney_now.strftime("%H:%M:%S"),
+        "timezone": str(sydney_now.tzname()),
+        "utc_offset": str(sydney_now.strftime("%z"))
     })
 
 @app.route("/health")
